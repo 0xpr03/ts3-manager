@@ -26,7 +26,7 @@ public class Instance<E extends ModEvent & TS3Event> implements TeamspeakActionL
 	private int CHANNEL;
 	private HashMap<String, Boolean> enabled_features;
 	private Vector<E> mods;
-	private TS3Connector ts3connector;
+	private TS3Connector<?> ts3connector;
 	
 	/**
 	 * An ts3 server instance

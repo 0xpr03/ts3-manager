@@ -10,13 +10,13 @@ import de.stefan1200.jts3serverquery.TeamspeakActionListener;
 /**
  * TS3Connector containing also the actionlistener
  * @author Aron Heinecke
- * @param <E>
+ * @param <U>
  */
-public class TS3Connector<E extends TeamspeakActionListener> {
+public class TS3Connector<U extends TeamspeakActionListener> {
 	Logger logger = LogManager.getLogger();
 	JTS3ServerQuery query;
 	
-	public TS3Connector(E listener, int id, String ip, int port, String user, String password, String name,int channel) throws TS3ServerQueryException{
+	public TS3Connector(U listener, int id, String ip, int port, String user, String password, String name,int channel) throws TS3ServerQueryException{
 		query = new JTS3ServerQuery();
 		try{
 			query.connectTS3Query(ip, port);
