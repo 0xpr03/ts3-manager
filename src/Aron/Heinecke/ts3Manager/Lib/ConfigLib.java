@@ -1,4 +1,4 @@
-package Aron.Heinecke.ts3Manager;
+package Aron.Heinecke.ts3Manager.Lib;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -16,6 +16,9 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.scanner.ScannerException;
+
+import Aron.Heinecke.ts3Manager.Config;
+import Aron.Heinecke.ts3Manager.Instance;
 
 /**
  * ConfigLib for TS3Manager

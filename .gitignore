@@ -1,1 +1,9 @@
 bin/
+log4j-api-2.2-javadoc.jar
+log4j-api-2.2.jar
+log4j-core-2.2.jar
+log4j-iostreams-2.2.jar
+mariadb-java-client-1.1.8-javadoc.jar
+mariadb-java-client-1.1.8.jar
+snakeyaml-1.15-javadoc.jar
+snakeyaml-1.15.jar
