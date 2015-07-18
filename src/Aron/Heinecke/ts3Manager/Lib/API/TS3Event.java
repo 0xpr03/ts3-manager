@@ -7,7 +7,7 @@ import java.util.HashMap;
  * Only activated if so specified in the mod library
  * @author Aron Heinecke
  */
-public interface TS3ClientEvent {
+public interface TS3Event {
 	public abstract void handleClientJoined(String eventType, HashMap<String, String> eventInfo);
 	public abstract void handleClientLeft(String eventType, HashMap<String, String> eventInfo);
 	public abstract void handleTextMessage(String eventType, HashMap<String, String> eventInfo);

@@ -1,7 +1,5 @@
 package Aron.Heinecke.ts3Manager.Lib;
 
-import java.util.HashMap;
-
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -12,26 +10,37 @@ import de.stefan1200.jts3serverquery.TeamspeakActionListener;
 /**
  * TS3Connector containing also the actionlistener
  * @author Aron Heinecke
+ * @param <E>
  */
-public class TS3Connector implements TeamspeakActionListener {
+public class TS3Connector<E extends TeamspeakActionListener> {
 	Logger logger = LogManager.getLogger();
 	JTS3ServerQuery query;
 	
-	public TS3Connector(int id, String ip, int port, String user, String password) throws TS3ServerQueryException{
+	public TS3Connector(E listener, int id, String ip, int port, String user, String password, String name,int channel) throws TS3ServerQueryException{
 		query = new JTS3ServerQuery();
 		try{
 			query.connectTS3Query(ip, port);
 			query.loginTS3(user, password);
-			query.setTeamspeakActionListener(this);
+			query.setTeamspeakActionListener(listener);
 			query.selectVirtualServer(id);
 		}catch (TS3ServerQueryException sqe){
 			logger.fatal("Instance id {} Error during Connection establishing!");
-			
 			if (sqe.getFailedPermissionID() >= 0)
 				logger.info("Missing permissions");
 			throw sqe;
 		}catch (Exception e){
 			logger.fatal(e);
+		}
+		try{
+			query.moveClient(query.getCurrentQueryClientID(), channel, null);
+		}catch(TS3ServerQueryException e){
+			logger.warn("Error on joining channel!");
+		}
+		try{
+			query.setDisplayName(name);
+		}catch (TS3ServerQueryException sqe){
+			logger.info("Name already taken");
+			query.setDisplayName(name+System.currentTimeMillis());
 		}
 	}
 	
@@ -52,10 +61,5 @@ public class TS3Connector implements TeamspeakActionListener {
 	private void registerEvent(int eventMode, boolean enable) throws TS3ServerQueryException{
 		if(enable)
 			query.addEventNotify(eventMode, 0);
-	}
-
-	@Override
-	public void teamspeakActionPerformed(String eventType, HashMap<String, String> eventInfo) {
-		
 	}
 }
