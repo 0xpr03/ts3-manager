@@ -1,0 +1,18 @@
+### TS3 Manager config # Aron Heinecke 2015 ###
+TS3_IP: localhost
+TS3_USER: serveradmin
+TS3_PORT: 1200
+TS3_PASSWORD: blank
+MYSQL_PORT: 3306
+MYSQL_USER: user
+MYSQL_PASSWORD: blank
+MYSQL_IP: localhost
+CONNECTIONS_RETRY: true
+
+1.instance_enabled: bot
+1.instance_ts3_name: bot
+1.instance_ts3_ID: 123
+1.instance_ts3_channel: 123
+1.instance_features: {
+  user_statistics : true
+  }
