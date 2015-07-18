@@ -19,14 +19,23 @@ import de.stefan1200.jts3serverquery.TeamspeakActionListener;
  * @param <E>
  */
 public class Instance<E extends ModEvent & TS3Event> implements TeamspeakActionListener {
+	public int getSID() {
+		return SID;
+	}
+
+	public String getBOT_NAME() {
+		return BOT_NAME;
+	}
+
 	private Logger logger = LogManager.getLogger();
 	private int SID;
 	private boolean retry;
 	private String BOT_NAME;
 	private int CHANNEL;
 	private HashMap<String, Boolean> enabled_features;
-	private Vector<E> mods;
+	private Vector<E> mods = new Vector<E>();
 	private TS3Connector<?> ts3connector;
+	private String lastActionString = "";
 	
 	/**
 	 * An ts3 server instance
@@ -46,6 +55,9 @@ public class Instance<E extends ModEvent & TS3Event> implements TeamspeakActionL
 			connected = ts3connector == null ? true : false;
 		} while(!connected && retry);
 		createFeatures();
+		
+		logger.debug("Registering for all events for debug!");
+		ts3connector.registerEvents(true, true, true, true, true);
 	}
 	
 	/**
@@ -64,10 +76,13 @@ public class Instance<E extends ModEvent & TS3Event> implements TeamspeakActionL
 		for(String fnName : enabled_features.keySet()){
 			if(enabled_features.get(fnName)){
 				try {
-					Class<?> newFunction = Class.forName("de.stefan1200.jts3servermod.functions." + fnName);
+					Class<?> newFunction = Class.forName("Aron.Heinecke.ts3Manager.Mods." + fnName);
 					if(ModEvent.class.isAssignableFrom(newFunction) && TS3Event.class.isAssignableFrom(newFunction)){
 						@SuppressWarnings("unchecked")
 						E obj = (E) newFunction.getDeclaredConstructor(Instance.class).newInstance(this);
+						if(obj == null){
+							logger.fatal("object ist null!");
+						}
 						mods.add(obj);
 					}else{
 						logger.fatal("Class not representing a mod! {}",fnName);
@@ -81,7 +96,17 @@ public class Instance<E extends ModEvent & TS3Event> implements TeamspeakActionL
 
 	@Override
 	public void teamspeakActionPerformed(String eventType, HashMap<String, String> eventInfo) {
-		logger.debug("{}",eventInfo);
+		if (eventType.equals("notifytextmessage")) {
+			// shandleChatMessage(eventInfo);
+		} else {
+			if ((eventType + eventInfo.toString()).equals(this.lastActionString)) { // double event firing bug
+				return;
+			}
+			lastActionString = eventType + eventInfo.toString();
+			
+		}
+		
+		logger.debug("EVENT Instance: {}\n{}",SID,eventInfo);
 	}
 	
 	public void setConnectionRetry(boolean retry){

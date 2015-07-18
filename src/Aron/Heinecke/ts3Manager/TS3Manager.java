@@ -52,6 +52,13 @@ public class TS3Manager {
 		} catch (IOException e) {
 			logger.error("{}",e);
 		}*/
+		while(true){
+			try {
+				Thread.sleep(100);
+			} catch (InterruptedException e) {
+				logger.info(e);
+			}
+		}
 	}
 	
 }

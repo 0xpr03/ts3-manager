@@ -21,8 +21,8 @@ public class TS3Connector<U extends TeamspeakActionListener> {
 		try{
 			query.connectTS3Query(ip, port);
 			query.loginTS3(user, password);
-			query.setTeamspeakActionListener(listener);
 			query.selectVirtualServer(id);
+			query.setTeamspeakActionListener(listener);
 		}catch (TS3ServerQueryException sqe){
 			logger.fatal("Instance id {} Error during Connection establishing!");
 			if (sqe.getFailedPermissionID() >= 0)
@@ -30,6 +30,7 @@ public class TS3Connector<U extends TeamspeakActionListener> {
 			throw sqe;
 		}catch (Exception e){
 			logger.fatal(e);
+			return;
 		}
 		try{
 			query.moveClient(query.getCurrentQueryClientID(), channel, null);

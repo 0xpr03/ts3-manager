@@ -98,6 +98,7 @@ public class ConfigLib {
 	public List<Instance> loadInstances(){
 		List<Instance> list = new ArrayList<Instance>();
 		int i = 1;
+		int loaded = 0;
 		while(config.containsKey(i+".instance_enabled")){
 			try{
 				int ts3_id = (int) config.get(i+".instance_ts3_ID");
@@ -105,13 +106,14 @@ public class ConfigLib {
 				int channel = (int) config.get(i+".instance_ts3_channel");
 				HashMap<String,Boolean> features = (HashMap<String, Boolean>) config.get(i+".instance_features");
 				list.add(new Instance(ts3_id,name,channel,features));
+				loaded++;
 			}catch( Exception e){
 				//TODO: differentiate between errors
 				logger.error("Error on instance loading {}",e);
 			}
 			i++;
 		}
-		logger.info("Loaded {} instances.",i-1);
+		logger.info("Loaded {}/{} instances.",loaded,i-1);
 		return list;
 	}
 	

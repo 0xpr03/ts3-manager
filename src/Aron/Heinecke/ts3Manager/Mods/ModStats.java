@@ -5,14 +5,18 @@ import java.util.HashMap;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import Aron.Heinecke.ts3Manager.Instance;
 import Aron.Heinecke.ts3Manager.Lib.API.ModEvent;
 import Aron.Heinecke.ts3Manager.Lib.API.TS3Event;
 
 public class ModStats implements ModEvent, TS3Event {
 	Logger logger;
+	private Instance<?> instance;
 	
-	public ModStats(){
+	public ModStats(Instance<?> instance){
 		logger = LogManager.getLogger();
+		this.instance = instance;
+		logger.debug("Instance: {}",this.instance.getSID());
 	}
 
 	@Override
@@ -58,8 +62,6 @@ public class ModStats implements ModEvent, TS3Event {
 
 	@Override
 	public void handleReady() {
-		// TODO Auto-generated method stub
-		
 	}
 
 	@Override
