@@ -14,5 +14,5 @@ CONNECTIONS_RETRY: true
 1.instance_ts3_ID: 123
 1.instance_ts3_channel: 123
 1.instance_features: {
-  user_statistics : true
+  ModStats : true
   }
