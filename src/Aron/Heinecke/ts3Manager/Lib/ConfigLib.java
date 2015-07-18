@@ -78,7 +78,7 @@ public class ConfigLib {
 		Config.setValue("TS3_IP", config.get("TS3_IP"));
 		Config.setValue("TS3_USER", config.get("TS3_USER"));
 		Config.setValue("TS3_PORT", config.get("TS3_PORT"));
-		Config.setValue("MYSQL_IP", config.get("MYSQL_IP"));
+		Config.setValue("TS3_PASSWORD", config.get("TS3_PASSWORD"));
 		
 		Config.setValue("CONNECTIONS_RETRY", config.get("CONNECTIONS_RETRY"));
 		
@@ -94,7 +94,7 @@ public class ConfigLib {
 	 * X.instance_features:
 	 * @param config
 	 */
-	@SuppressWarnings("unchecked")
+	@SuppressWarnings({ "unchecked", "rawtypes" })
 	public List<Instance> loadInstances(){
 		List<Instance> list = new ArrayList<Instance>();
 		int i = 1;

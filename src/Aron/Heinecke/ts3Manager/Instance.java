@@ -54,7 +54,7 @@ public class Instance<E extends ModEvent & TS3Event> implements TeamspeakActionL
 	 */
 	private <U extends TeamspeakActionListener> TS3Connector<U> getTS3Connector(U i){
 		try {
-			return new TS3Connector<U>(i, SID, Config.getStrValue(""), Config.getIntValue(""), Config.getStrValue(""), Config.getStrValue(""),BOT_NAME,CHANNEL);
+			return new TS3Connector<U>(i, SID, Config.getStrValue("TS3_IP"), Config.getIntValue("TS3_PORT"), Config.getStrValue("TS3_USER"), Config.getStrValue("TS3_PASSWORD"),BOT_NAME,CHANNEL);
 		} catch (TS3ServerQueryException e) {
 			return null;
 		}
