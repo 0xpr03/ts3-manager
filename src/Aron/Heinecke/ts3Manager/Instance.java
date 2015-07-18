@@ -10,10 +10,14 @@ import org.apache.logging.log4j.Logger;
 import Aron.Heinecke.ts3Manager.Lib.TS3Connector;
 import Aron.Heinecke.ts3Manager.Lib.API.ModEvent;
 import Aron.Heinecke.ts3Manager.Lib.API.TS3Event;
-import Aron.Heinecke.ts3Manager.Mods.ModStats;
 import de.stefan1200.jts3serverquery.TS3ServerQueryException;
 import de.stefan1200.jts3serverquery.TeamspeakActionListener;
 
+/**
+ * Instance represents one server
+ * @author Aron Heinecke
+ * @param <E>
+ */
 public class Instance<E extends ModEvent & TS3Event> implements TeamspeakActionListener {
 	private Logger logger = LogManager.getLogger();
 	private int SID;
@@ -38,7 +42,7 @@ public class Instance<E extends ModEvent & TS3Event> implements TeamspeakActionL
 		this.enabled_features = features;
 		boolean connected = false;
 		do {
-			ts3connector = getTS3Connector();
+			ts3connector = getTS3Connector(this);
 			connected = ts3connector == null ? true : false;
 		} while(!connected && retry);
 		createFeatures();
@@ -48,9 +52,9 @@ public class Instance<E extends ModEvent & TS3Event> implements TeamspeakActionL
 	 * Create new connector
 	 * @return null on failure
 	 */
-	private TS3Connector<E extends TeamspeakActionListener> getTS3Connector(){
+	private <U extends TeamspeakActionListener> TS3Connector<U> getTS3Connector(U i){
 		try {
-			return new TS3Connector<Instance<<E extends TeamspeakActionListener>>>(this, SID, Config.getStrValue(""), Config.getIntValue(""), Config.getStrValue(""), Config.getStrValue(""),BOT_NAME,CHANNEL);
+			return new TS3Connector<U>(i, SID, Config.getStrValue(""), Config.getIntValue(""), Config.getStrValue(""), Config.getStrValue(""),BOT_NAME,CHANNEL);
 		} catch (TS3ServerQueryException e) {
 			return null;
 		}
@@ -62,6 +66,7 @@ public class Instance<E extends ModEvent & TS3Event> implements TeamspeakActionL
 				try {
 					Class<?> newFunction = Class.forName("de.stefan1200.jts3servermod.functions." + fnName);
 					if(ModEvent.class.isAssignableFrom(newFunction) && TS3Event.class.isAssignableFrom(newFunction)){
+						@SuppressWarnings("unchecked")
 						E obj = (E) newFunction.getDeclaredConstructor(Instance.class).newInstance(this);
 						mods.add(obj);
 					}else{

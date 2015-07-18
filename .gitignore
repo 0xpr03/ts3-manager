@@ -1,4 +1,5 @@
 bin/
+jar/
 log4j-api-2.2-javadoc.jar
 log4j-api-2.2.jar
 log4j-core-2.2.jar
