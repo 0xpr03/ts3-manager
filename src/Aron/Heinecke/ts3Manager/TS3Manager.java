@@ -1,5 +1,55 @@
 package Aron.Heinecke.ts3Manager;
 
-public class TS3Manager {
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.yaml.snakeyaml.scanner.ScannerException;
+
+/**
+ * TS3 Manager Main class
+ * @author Aron Heinecke
+ */
+public class TS3Manager {
+	private static Logger logger = LogManager.getLogger();
+	private static String VERSION = "0.1 alpha";
+	private static List<Instance> instances = new ArrayList<Instance>();
+	
+	/**
+	 * Mainc lass<br>
+	 * Loading config (exit on error)
+	 * Loading instances (ignores errorous instances )
+	 * @param args
+	 */
+	public static void main(String[] args){
+		logger.info("Starting up version {}",VERSION);
+		
+		ConfigLib cfglib = new ConfigLib();
+		boolean loaded = false;
+		try {
+			cfglib.loadConfig();
+			instances = cfglib.loadInstances();
+			loaded = true;
+		} catch (ScannerException | NullPointerException e) {
+			if(e instanceof ScannerException)
+				logger.error("config syntax error at \n{}",((ScannerException) e).getProblemMark().get_snippet());
+			else
+				logger.error("Error parsing the config!",e);
+		} catch (IOException e) {
+			logger.error("Failure loading the config file! {}",e);
+			cfglib.writeDefaults();
+			logger.info("Wrote default config.");
+		} finally {
+			if(!loaded)
+				System.exit(1);
+		}
+		/*try {
+			cfglib.writeTestMockup();
+		} catch (IOException e) {
+			logger.error("{}",e);
+		}*/
+	}
+	
 }
