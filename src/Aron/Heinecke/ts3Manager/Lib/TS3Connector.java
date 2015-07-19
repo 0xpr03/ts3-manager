@@ -1,5 +1,8 @@
 package Aron.Heinecke.ts3Manager.Lib;
 
+import java.util.Timer;
+import java.util.TimerTask;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -15,9 +18,53 @@ import de.stefan1200.jts3serverquery.TeamspeakActionListener;
 public class TS3Connector<U extends TeamspeakActionListener> {
 	Logger logger = LogManager.getLogger();
 	JTS3ServerQuery query;
+	private int id;
+	private String ip;
+	private int port;
+	private String user;
+	private String password;
+	private String name;
+	private int channel;
+	private U listener;
+	private Timer timer = null;
+	private TimerTask timertask;
 	
 	public TS3Connector(U listener, int id, String ip, int port, String user, String password, String name,int channel) throws TS3ServerQueryException{
 		query = new JTS3ServerQuery();
+		this.id = id;
+		this.ip = ip;
+		this.password = password;
+		this.name = name;
+		this.port = port;
+		this.user = user;
+		this.channel = channel;
+		this.listener = listener;
+		connect();
+		
+		timertask = new TimerTask() {
+			public void run() {
+				checkConnect();
+			}
+		};
+		interruptTimer();
+	}
+	
+	/**
+	 * Starts the timer<br>
+	 * Also interrupts it, if it's already running
+	 */
+	private void interruptTimer(){
+		if(timer != null)
+			timer.cancel();
+		timer = new Timer(true);
+		timer.schedule(timertask, 5*60*1000, 5*60*1000);
+	}
+	
+	/**
+	 * Connect is inside a new class for checkConnect
+	 * @throws TS3ServerQueryException
+	 */
+	private void connect() throws TS3ServerQueryException{
 		try{
 			query.connectTS3Query(ip, port);
 			query.loginTS3(user, password);
@@ -68,7 +115,12 @@ public class TS3Connector<U extends TeamspeakActionListener> {
 		}
 	}
 	
+	/**
+	 * Returns the connector & delays the connection keep alive
+	 * @return
+	 */
 	public JTS3ServerQuery getConnector(){
+		interruptTimer();
 		return query;
 	}
 	
@@ -84,6 +136,23 @@ public class TS3Connector<U extends TeamspeakActionListener> {
 	}
 	
 	public void disconnect(){
+		timertask.cancel();
+		timer.cancel();
 		query.closeTS3Connection();
+	}
+	
+	/**
+	 * Needs to run all 
+	 */
+	public void checkConnect() {
+		if ( !query.isConnected() ) {
+			logger.warn("DC!");
+			try {
+				connect();
+			} catch (TS3ServerQueryException e) {
+			}
+		} else {
+			query.doCommand("hostinfo");
+		}
 	}
 }
