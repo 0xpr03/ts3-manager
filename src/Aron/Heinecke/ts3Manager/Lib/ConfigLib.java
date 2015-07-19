@@ -32,6 +32,10 @@ public class ConfigLib {
 	Yaml yaml = new Yaml();
 	private File FILE = new File(System.getProperty("user.dir")+"/"+CONFIG_FILE);
 	
+	/**
+	 * TestMockup only for file sheme testing
+	 * @throws IOException
+	 */
 	public void writeTestMockup() throws IOException{
 		config = new HashMap<String,Object>();
 		HashMap<String, Boolean> features = new HashMap<String, Boolean>();

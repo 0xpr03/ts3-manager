@@ -45,6 +45,15 @@ public class TS3Connector<U extends TeamspeakActionListener> {
 		}
 	}
 	
+	/**
+	 * Register for events to be handled
+	 * @param server
+	 * @param channel
+	 * @param text_server
+	 * @param text_channel
+	 * @param text_private
+	 * @return
+	 */
 	public boolean registerEvents(boolean server, boolean channel, boolean text_server, boolean text_channel, boolean text_private){
 		try {
 			registerEvent(JTS3ServerQuery.EVENT_MODE_SERVER, server);
@@ -63,6 +72,12 @@ public class TS3Connector<U extends TeamspeakActionListener> {
 		return query;
 	}
 	
+	/**
+	 * Wrapper converting booleans to ints
+	 * @param eventMode
+	 * @param enable
+	 * @throws TS3ServerQueryException
+	 */
 	private void registerEvent(int eventMode, boolean enable) throws TS3ServerQueryException{
 		if(enable)
 			query.addEventNotify(eventMode, 0);

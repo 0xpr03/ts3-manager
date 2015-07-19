@@ -15,6 +15,10 @@ import Aron.Heinecke.ts3Manager.Lib.API.TS3Event;
 import de.stefan1200.jts3serverquery.JTS3ServerQuery;
 import de.stefan1200.jts3serverquery.TS3ServerQueryException;
 
+/**
+ * ModStats server usage statistics
+ * @author Aron Heinecke
+ */
 public class ModStats implements ModEvent, TS3Event {
 	Logger logger = LogManager.getLogger();
 	private long last_update = 0L;
@@ -39,6 +43,10 @@ public class ModStats implements ModEvent, TS3Event {
 		};
 	}
 	
+	/**
+	 * Request update<br>
+	 * Lazy scheduling stops rapid updates on massive join/leaves
+	 */
 	private void updateClients() {
 		if(blocked){
 			return;
@@ -51,6 +59,9 @@ public class ModStats implements ModEvent, TS3Event {
 		}
 	}
 	
+	/**
+	 * Internal update scheduler, shouldn't be called directly
+	 */
 	private void scheduleUpdate(){
 		try {
 			long start = System.currentTimeMillis();
@@ -67,19 +78,24 @@ public class ModStats implements ModEvent, TS3Event {
 		}
 	}
 	
+	/**
+	 * Get basic TS3Server Infos
+	 * @return HashMap with all infos
+	 * @throws TS3ServerQueryException
+	 */
 	private HashMap<String, String> getInfo() throws TS3ServerQueryException{
 		return instance.getTS3Connection().getConnector().getInfo(JTS3ServerQuery.INFOMODE_SERVERINFO, 0);
 	}
 
 	@Override
 	public void handleClientJoined(HashMap<String, String> eventInfo) {
-		logger.debug("Client joined, ");
+		logger.debug("Client joined");
 		updateClients();
 	}
 
 	@Override
 	public void handleClientLeft(HashMap<String, String> eventInfo) {
-		logger.debug("Client left, ");
+		logger.debug("Client left");
 		updateClients();
 	}
 

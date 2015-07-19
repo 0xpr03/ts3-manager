@@ -51,11 +51,7 @@ public class TS3Manager {
 			if(!loaded)
 				System.exit(1);
 		}
-		/*try {
-			cfglib.writeTestMockup();
-		} catch (IOException e) {
-			logger.error("{}",e);
-		}*/
+
 		while(true){
 			try {
 				Thread.sleep(100);
