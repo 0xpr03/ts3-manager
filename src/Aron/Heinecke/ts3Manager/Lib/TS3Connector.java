@@ -41,25 +41,7 @@ public class TS3Connector<U extends TeamspeakActionListener> {
 		this.listener = listener;
 		connect();
 		
-		interruptTimer();
-	}
-	
-	/**
-	 * Starts the timer<br>
-	 * Also interrupts it, if it's already running
-	 */
-	private void interruptTimer(){
-		if(timer != null){
-			timertask.cancel();
-			timer.cancel();
-		}
-		timer = new Timer(true);
-		timertask = new TimerTask(){
-			 public void run() {
-		          checkConnect();
-		     }
-		};
-		timer.schedule(timertask, 5*60*1000, 5*60*1000);
+		startTimer();
 	}
 	
 	/**
@@ -119,11 +101,36 @@ public class TS3Connector<U extends TeamspeakActionListener> {
 	}
 	
 	/**
+	 * Starts the timer for connection keep alive
+	 */
+	private void startTimer(){
+		timer = new Timer(true);
+		timertask = new TimerTask(){
+			 public void run() {
+		          checkConnect();
+		     }
+		};
+		timer.schedule(timertask, 5*60*1000, 5*60*1000);
+	}
+	
+	/**
+	 * Stops timer for connection keep alive
+	 */
+	private void stopTimer(){
+		if(timer == null){
+			return;
+		}
+		timertask.cancel();
+		timer.cancel();
+	}
+	
+	/**
 	 * Returns the connector & delays the connection keep alive
 	 * @return
 	 */
 	public JTS3ServerQuery getConnector(){
-		interruptTimer();
+		stopTimer();
+		startTimer();
 		return query;
 	}
 	
