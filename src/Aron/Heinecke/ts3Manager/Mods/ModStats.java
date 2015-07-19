@@ -22,9 +22,8 @@ import de.stefan1200.jts3serverquery.TS3ServerQueryException;
 public class ModStats implements ModEvent, TS3Event {
 	Logger logger = LogManager.getLogger();
 	private long last_update = 0L;
-	private boolean blocked = false;
 	private Instance<?> instance;
-	private Timer timer = new Timer(false);
+	private Timer timer;
 	private TimerTask timerdosnapshot;
 	private PreparedStatement stm;
 	private String sql;
@@ -48,13 +47,12 @@ public class ModStats implements ModEvent, TS3Event {
 	 * Lazy scheduling stops rapid updates on massive join/leaves
 	 */
 	private void updateClients() {
-		if(blocked){
-			return;
-		}
 		if(System.currentTimeMillis() - last_update >= 1000){
+			last_update = System.currentTimeMillis();
 			scheduleUpdate();
 		}else{
-			blocked = true;
+			logger.debug("Scheduling later");
+			timer = new Timer(false);
 			timer.schedule(timerdosnapshot, 1000);
 		}
 	}
@@ -72,9 +70,6 @@ public class ModStats implements ModEvent, TS3Event {
 			logger.debug("insert took {} ms",System.currentTimeMillis() - start);
 		} catch (TS3ServerQueryException | SQLException e) {
 			logger.error(e);
-		} finally{
-			last_update = System.currentTimeMillis();
-			blocked = false;
 		}
 	}
 	
@@ -162,7 +157,6 @@ public class ModStats implements ModEvent, TS3Event {
 	@Override
 	public void handleShutdown() {
 		logger.entry();
-		blocked = true;
 		timerdosnapshot.cancel();
 		timer.cancel();
 		try {
