@@ -11,7 +11,7 @@
 	<Loggers>
 		<Root level="TRACE">
 			<AppenderRef ref="Console" level="TRACE" />
-			<AppenderRef ref="log" level="WARN" />
+			<AppenderRef ref="log" level="INFO" />
 		</Root>
 	</Loggers>
 </Configuration>

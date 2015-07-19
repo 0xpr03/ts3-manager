@@ -29,35 +29,46 @@ public class ModStats implements ModEvent, TS3Event {
 	public ModStats(Instance<?> instance){
 		this.instance = instance;
 		logger.debug("Instance: {}",this.instance.getSID());
-		sql = "INSERT INTO %s (``) VALUES (?);";
 		tableName = "ModStats_"+instance.getSID();
-		sql.replaceFirst("%s", tableName);
+		sql = String.format("INSERT INTO %s (`clients`,`queryclients`) VALUES (?,?);",tableName);
 		timerdosnapshot = new TimerTask() {
 			@Override
 			public void run() {
-				updateClients();
+				scheduleUpdate();
 			}
 		};
 	}
 	
-	private synchronized void updateClients() {
+	private void updateClients() {
 		if(blocked){
 			return;
 		}
-		if(System.currentTimeMillis() - last_update > 1000){
-			try {
-				int i = Integer.valueOf(instance.getTS3Connection().getConnector().getInfo(JTS3ServerQuery.INFOMODE_SERVERINFO, 0).get("virtualserver_clientsonline"));
-				logger.info("{}",i);
-				stm.setInt(1, i);
-				stm.executeUpdate();
-			} catch (TS3ServerQueryException | SQLException e) {
-				logger.error(e);
-			}
-			blocked = false;
+		if(System.currentTimeMillis() - last_update >= 1000){
+			scheduleUpdate();
 		}else{
 			blocked = true;
 			timer.schedule(timerdosnapshot, 1000);
 		}
+	}
+	
+	private void scheduleUpdate(){
+		try {
+			long start = System.currentTimeMillis();
+			HashMap<String,String> i = getInfo();
+			stm.setInt(1, Integer.valueOf(i.get("virtualserver_clientsonline")));
+			stm.setInt(2, Integer.valueOf(i.get("virtualserver_queryclientsonline")));
+			stm.executeUpdate();
+			logger.debug("insert took {} ms",System.currentTimeMillis() - start);
+		} catch (TS3ServerQueryException | SQLException e) {
+			logger.error(e);
+		} finally{
+			last_update = System.currentTimeMillis();
+			blocked = false;
+		}
+	}
+	
+	private HashMap<String, String> getInfo() throws TS3ServerQueryException{
+		return instance.getTS3Connection().getConnector().getInfo(JTS3ServerQuery.INFOMODE_SERVERINFO, 0);
 	}
 
 	@Override
@@ -106,13 +117,13 @@ public class ModStats implements ModEvent, TS3Event {
 	@Override
 	public void handleReady() {
 		try{
-			String table = "CREATE TABLE IF NOT EXISTS `%s` ("
+			String table = String.format("CREATE TABLE IF NOT EXISTS `%s` ("
 				+" `clients` int(11) NOT NULL,"
-				+" `timestamp` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,"
+				+" `queryclients` int(11) NOT NULL,"
+				+" `timestamp` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,"
 				+" PRIMARY KEY (`timestamp`)"
-				+") ENGINE=InnoDB DEFAULT CHARSET=latin1 COMMENT='%d'";
-			table.replace("%d", instance.getTS3Connection().getConnector().getInfo(JTS3ServerQuery.INFOMODE_SERVERINFO, 0).get("virtualserver_name"));
-			instance.getMysqlconnector().execUpdateQuery(table.replace("%s", tableName));
+				+") ENGINE=InnoDB DEFAULT CHARSET=latin1 COMMENT='%s'",tableName,instance.getTS3Connection().getConnector().getInfo(JTS3ServerQuery.INFOMODE_SERVERINFO, 0).get("virtualserver_name"));
+			instance.getMysqlconnector().execUpdateQuery(table);
 		}catch(SQLException | TS3ServerQueryException e){
 			logger.error("{}",e);
 		}
