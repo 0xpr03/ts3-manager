@@ -56,6 +56,7 @@ public class Instance<E extends ModEvent & TS3Event> implements TeamspeakActionL
 		this.CHANNEL = CHANNEL;
 		this.enabled_features = features;
 		boolean connected = false;
+		retry = Config.getBoolValue("CONNECTIONS_RETRY");
 		do {
 			ts3connector = getTS3Connector(this);
 			connected = ts3connector == null ? true : false;
@@ -128,6 +129,7 @@ public class Instance<E extends ModEvent & TS3Event> implements TeamspeakActionL
 							channelEvent = true;
 						if(obj.needs_MYSQL())
 							mysql_required = true;
+						logger.info("Instance {} loaded mod {}",SID,fnName);
 					}else{
 						logger.fatal("Class not representing a mod! {}",fnName);
 					}

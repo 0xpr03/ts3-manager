@@ -106,12 +106,16 @@ public class ConfigLib {
 		int loaded = 0;
 		while(config.containsKey(i+".instance_enabled")){
 			try{
-				int ts3_id = (int) config.get(i+".instance_ts3_ID");
-				String name = (String) config.get(i+".instance_ts3_name");
-				int channel = (int) config.get(i+".instance_ts3_channel");
-				HashMap<String,Boolean> features = (HashMap<String, Boolean>) config.get(i+".instance_features");
-				list.add(new Instance(ts3_id,name,channel,features));
-				loaded++;
+				if((boolean) config.get(i+".instance_enabled")){
+					int ts3_id = (int) config.get(i+".instance_ts3_ID");
+					String name = (String) config.get(i+".instance_ts3_name");
+					int channel = (int) config.get(i+".instance_ts3_channel");
+					HashMap<String,Boolean> features = (HashMap<String, Boolean>) config.get(i+".instance_features");
+					list.add(new Instance(ts3_id,name,channel,features));
+					loaded++;
+				}else{
+					logger.info("Instance no. {} disabled, skipping..",i);
+				}
 			}catch( Exception e){
 				//TODO: differentiate between errors
 				logger.error("Error on instance loading {}",e);
