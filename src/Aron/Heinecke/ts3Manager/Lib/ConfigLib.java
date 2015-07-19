@@ -74,6 +74,7 @@ public class ConfigLib {
 		Config.setValue("MYSQL_USER", config.get("MYSQL_USER"));
 		Config.setValue("MYSQL_PASSWORD", config.get("MYSQL_PASSWORD"));
 		Config.setValue("MYSQL_IP", config.get("MYSQL_IP"));
+		Config.setValue("MYSQL_DB", config.get("MYSQL_DB"));
 		
 		Config.setValue("TS3_IP", config.get("TS3_IP"));
 		Config.setValue("TS3_USER", config.get("TS3_USER"));

@@ -59,6 +59,10 @@ public class TS3Connector<U extends TeamspeakActionListener> {
 		}
 	}
 	
+	public JTS3ServerQuery getConnector(){
+		return query;
+	}
+	
 	private void registerEvent(int eventMode, boolean enable) throws TS3ServerQueryException{
 		if(enable)
 			query.addEventNotify(eventMode, 0);

@@ -17,6 +17,7 @@ import Aron.Heinecke.ts3Manager.Lib.ConfigLib;
 public class TS3Manager {
 	private static Logger logger = LogManager.getLogger();
 	private static String VERSION = "0.1 alpha";
+	@SuppressWarnings("rawtypes")
 	private static List<Instance> instances = new ArrayList<Instance>();
 	
 	/**
@@ -68,7 +69,8 @@ public class TS3Manager {
 		Runtime.getRuntime().addShutdownHook(new Thread() {
 			@Override
 			public void run() {
-				for(Instance i : instances){
+				logger.entry();
+				for(Instance<?> i : instances){
 					i.shutdown();
 				}
 			}

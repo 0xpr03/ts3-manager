@@ -7,6 +7,7 @@ MYSQL_PORT: 3306
 MYSQL_USER: user
 MYSQL_PASSWORD: blank
 MYSQL_IP: localhost
+MYSQL_DB: ts3manager
 CONNECTIONS_RETRY: true
 
 1.instance_enabled: bot

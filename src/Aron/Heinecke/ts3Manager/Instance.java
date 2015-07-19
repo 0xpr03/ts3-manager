@@ -7,6 +7,7 @@ import java.util.Vector;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import Aron.Heinecke.ts3Manager.Lib.MYSQLConnector;
 import Aron.Heinecke.ts3Manager.Lib.TS3Connector;
 import Aron.Heinecke.ts3Manager.Lib.API.ModEvent;
 import Aron.Heinecke.ts3Manager.Lib.API.TS3Event;
@@ -40,6 +41,7 @@ public class Instance<E extends ModEvent & TS3Event> implements TeamspeakActionL
 	private Vector<E> event_move = new Vector<E>();
 	private TS3Connector<?> ts3connector;
 	private String lastActionString = "";
+	private MYSQLConnector mysqlconnector;
 	
 	/**
 	 * An ts3 server instance
@@ -59,8 +61,6 @@ public class Instance<E extends ModEvent & TS3Event> implements TeamspeakActionL
 			connected = ts3connector == null ? true : false;
 		} while(!connected && retry);
 		createFeatures();
-		
-		logger.debug("Registering for all events for debug!");
 	}
 	
 	public void shutdown(){
@@ -69,6 +69,7 @@ public class Instance<E extends ModEvent & TS3Event> implements TeamspeakActionL
 			e.handleShutdown();
 		}
 		ts3connector.disconnect();
+		mysqlconnector.disconnect();
 	}
 	
 	/**
@@ -94,6 +95,7 @@ public class Instance<E extends ModEvent & TS3Event> implements TeamspeakActionL
 		boolean textChannel = false;
 		boolean textPrivate = false;
 		boolean textServer = false;
+		boolean mysql_required = false;
 		for(String fnName : enabled_features.keySet()){
 			if(enabled_features.get(fnName)){
 				try {
@@ -123,6 +125,8 @@ public class Instance<E extends ModEvent & TS3Event> implements TeamspeakActionL
 							serverEvent = true;
 						if(obj.needs_Event_Channel())
 							channelEvent = true;
+						if(obj.needs_MYSQL())
+							mysql_required = true;
 					}else{
 						logger.fatal("Class not representing a mod! {}",fnName);
 					}
@@ -131,7 +135,11 @@ public class Instance<E extends ModEvent & TS3Event> implements TeamspeakActionL
 				}
 			}
 		}
+		
 		ts3connector.registerEvents(serverEvent, channelEvent, textServer, textChannel, textPrivate);
+		
+		if(mysql_required)
+			mysqlconnector = new MYSQLConnector();
 	}
 
 	@Override
@@ -167,7 +175,15 @@ public class Instance<E extends ModEvent & TS3Event> implements TeamspeakActionL
 		//logger.debug("EVENT TYPE {} Instance: {}\n{}",eventType,SID,eventInfo);
 	}
 	
+	public TS3Connector<?> getTS3Connection(){
+		return ts3connector;
+	}
+	
 	public void setConnectionRetry(boolean retry){
 		this.retry = retry;
+	}
+	
+	public MYSQLConnector getMysqlconnector() {
+		return mysqlconnector;
 	}
 }
