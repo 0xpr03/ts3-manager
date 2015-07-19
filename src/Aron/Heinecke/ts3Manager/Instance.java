@@ -20,14 +20,6 @@ import de.stefan1200.jts3serverquery.TeamspeakActionListener;
  * @param <E>
  */
 public class Instance<E extends ModEvent & TS3Event> implements TeamspeakActionListener {
-	public int getSID() {
-		return SID;
-	}
-
-	public String getBOT_NAME() {
-		return BOT_NAME;
-	}
-
 	private Logger logger = LogManager.getLogger();
 	private int SID;
 	private boolean retry;
@@ -59,7 +51,7 @@ public class Instance<E extends ModEvent & TS3Event> implements TeamspeakActionL
 		retry = Config.getBoolValue("CONNECTIONS_RETRY");
 		do {
 			ts3connector = getTS3Connector(this);
-			connected = ts3connector == null ? true : false;
+			connected = ts3connector != null;
 		} while(!connected && retry);
 		createFeatures();
 	}
@@ -81,6 +73,7 @@ public class Instance<E extends ModEvent & TS3Event> implements TeamspeakActionL
 		try {
 			return new TS3Connector<U>(i, SID, Config.getStrValue("TS3_IP"), Config.getIntValue("TS3_PORT"), Config.getStrValue("TS3_USER"), Config.getStrValue("TS3_PASSWORD"),BOT_NAME,CHANNEL);
 		} catch (TS3ServerQueryException e) {
+			logger.warn("{}",e);
 			return null;
 		}
 	}
@@ -129,7 +122,7 @@ public class Instance<E extends ModEvent & TS3Event> implements TeamspeakActionL
 							channelEvent = true;
 						if(obj.needs_MYSQL())
 							mysql_required = true;
-						logger.info("Instance {} loaded mod {}",SID,fnName);
+						logger.info("Instance {} loaded {}",SID,fnName);
 					}else{
 						logger.fatal("Class not representing a mod! {}",fnName);
 					}
@@ -180,6 +173,14 @@ public class Instance<E extends ModEvent & TS3Event> implements TeamspeakActionL
 		}
 		
 		//logger.debug("EVENT TYPE {} Instance: {}\n{}",eventType,SID,eventInfo);
+	}
+	
+	public int getSID() {
+		return SID;
+	}
+
+	public String getBOT_NAME() {
+		return BOT_NAME;
 	}
 	
 	public TS3Connector<?> getTS3Connection(){

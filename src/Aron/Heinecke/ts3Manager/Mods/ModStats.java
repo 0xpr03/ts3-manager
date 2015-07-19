@@ -158,7 +158,8 @@ public class ModStats implements ModEvent, TS3Event {
 	public void handleShutdown() {
 		logger.entry();
 		timerdosnapshot.cancel();
-		timer.cancel();
+		if(timer != null)
+			timer.cancel();
 		try {
 			if(stm != null)
 				stm.close();
