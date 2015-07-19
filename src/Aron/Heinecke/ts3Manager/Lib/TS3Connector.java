@@ -27,7 +27,6 @@ public class TS3Connector<U extends TeamspeakActionListener> {
 	private int channel;
 	private U listener;
 	private Timer timer = null;
-	private TimerTask timertask;
 	
 	public TS3Connector(U listener, int id, String ip, int port, String user, String password, String name,int channel) throws TS3ServerQueryException{
 		query = new JTS3ServerQuery();
@@ -41,11 +40,6 @@ public class TS3Connector<U extends TeamspeakActionListener> {
 		this.listener = listener;
 		connect();
 		
-		timertask = new TimerTask() {
-			public void run() {
-				checkConnect();
-			}
-		};
 		interruptTimer();
 	}
 	
@@ -57,7 +51,11 @@ public class TS3Connector<U extends TeamspeakActionListener> {
 		if(timer != null)
 			timer.cancel();
 		timer = new Timer(true);
-		timer.schedule(timertask, 5*60*1000, 5*60*1000);
+		timer.schedule(new TimerTask() {
+		     public void run() {
+		          checkConnect();
+		     }
+		}, 5*60*1000, 5*60*1000);
 	}
 	
 	/**
@@ -136,7 +134,6 @@ public class TS3Connector<U extends TeamspeakActionListener> {
 	}
 	
 	public void disconnect(){
-		timertask.cancel();
 		timer.cancel();
 		query.closeTS3Connection();
 	}
