@@ -27,6 +27,7 @@ public class TS3Connector<U extends TeamspeakActionListener> {
 	private int channel;
 	private U listener;
 	private Timer timer = null;
+	private TimerTask timertask = null;
 	
 	public TS3Connector(U listener, int id, String ip, int port, String user, String password, String name,int channel) throws TS3ServerQueryException{
 		query = new JTS3ServerQuery();
@@ -48,14 +49,17 @@ public class TS3Connector<U extends TeamspeakActionListener> {
 	 * Also interrupts it, if it's already running
 	 */
 	private void interruptTimer(){
-		if(timer != null)
+		if(timer != null){
+			timertask.cancel();
 			timer.cancel();
+		}
 		timer = new Timer(true);
-		timer.schedule(new TimerTask() {
-		     public void run() {
+		timertask = new TimerTask(){
+			 public void run() {
 		          checkConnect();
 		     }
-		}, 5*60*1000, 5*60*1000);
+		};
+		timer.schedule(timertask, 5*60*1000, 5*60*1000);
 	}
 	
 	/**
@@ -68,6 +72,7 @@ public class TS3Connector<U extends TeamspeakActionListener> {
 			query.loginTS3(user, password);
 			query.selectVirtualServer(id);
 			query.setTeamspeakActionListener(listener);
+			
 		}catch (TS3ServerQueryException sqe){
 			logger.fatal("Instance id {} Error during Connection establishing!");
 			if (sqe.getFailedPermissionID() >= 0)
@@ -141,15 +146,18 @@ public class TS3Connector<U extends TeamspeakActionListener> {
 	/**
 	 * Needs to run all 
 	 */
-	public void checkConnect() {
-		if ( !query.isConnected() ) {
-			logger.warn("DC!");
-			try {
+	private void checkConnect() {
+		logger.entry();
+		try {
+			if ( !query.isConnected() ) {
+				logger.warn("DC!");
 				connect();
-			} catch (TS3ServerQueryException e) {
+			} else {
+				query.doCommand("hostinfo");
 			}
-		} else {
-			query.doCommand("hostinfo");
+		} catch (Exception e) {
+			logger.error(e);
 		}
+		logger.exit();
 	}
 }
