@@ -8,8 +8,8 @@ import java.util.HashMap;
  * @author Aron Heinecke
  */
 public interface TS3Event {
-	public abstract void handleClientJoined(String eventType, HashMap<String, String> eventInfo);
-	public abstract void handleClientLeft(String eventType, HashMap<String, String> eventInfo);
+	public abstract void handleClientJoined(HashMap<String, String> eventInfo);
+	public abstract void handleClientLeft(HashMap<String, String> eventInfo);
 	public abstract void handleTextMessage(String eventType, HashMap<String, String> eventInfo);
-	public abstract void handleClientMoved(String eventType, HashMap<String, String> eventInfo);
+	public abstract void handleClientMoved(HashMap<String, String> eventInfo);
 }

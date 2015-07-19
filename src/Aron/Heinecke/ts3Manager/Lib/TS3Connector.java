@@ -63,4 +63,8 @@ public class TS3Connector<U extends TeamspeakActionListener> {
 		if(enable)
 			query.addEventNotify(eventMode, 0);
 	}
+	
+	public void disconnect(){
+		query.closeTS3Connection();
+	}
 }

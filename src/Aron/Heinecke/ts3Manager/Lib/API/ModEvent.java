@@ -17,4 +17,8 @@ public interface ModEvent {
 	 * Called when all required things are ready
 	 */
 	public abstract void handleReady();
+	/**
+	 * Caled on shutdown
+	 */
+	public abstract void handleShutdown();
 }

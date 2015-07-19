@@ -30,6 +30,9 @@ public class TS3Manager {
 		
 		ConfigLib cfglib = new ConfigLib();
 		boolean loaded = false;
+		
+		registerExitFunction();
+		
 		try {
 			cfglib.loadConfig();
 			instances = cfglib.loadInstances();
@@ -59,6 +62,17 @@ public class TS3Manager {
 				logger.info(e);
 			}
 		}
+	}
+	
+	private static void registerExitFunction(){
+		Runtime.getRuntime().addShutdownHook(new Thread() {
+			@Override
+			public void run() {
+				for(Instance i : instances){
+					i.shutdown();
+				}
+			}
+		});
 	}
 	
 }

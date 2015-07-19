@@ -34,6 +34,10 @@ public class Instance<E extends ModEvent & TS3Event> implements TeamspeakActionL
 	private int CHANNEL;
 	private HashMap<String, Boolean> enabled_features;
 	private Vector<E> mods = new Vector<E>();
+	private Vector<E> event_joined = new Vector<E>();
+	private Vector<E> event_left = new Vector<E>();
+	private Vector<E> event_chat = new Vector<E>();
+	private Vector<E> event_move = new Vector<E>();
 	private TS3Connector<?> ts3connector;
 	private String lastActionString = "";
 	
@@ -57,7 +61,14 @@ public class Instance<E extends ModEvent & TS3Event> implements TeamspeakActionL
 		createFeatures();
 		
 		logger.debug("Registering for all events for debug!");
-		ts3connector.registerEvents(true, true, true, true, true);
+	}
+	
+	public void shutdown(){
+		logger.entry();
+		for(E e : mods){
+			e.handleShutdown();
+		}
+		ts3connector.disconnect();
 	}
 	
 	/**
@@ -72,7 +83,17 @@ public class Instance<E extends ModEvent & TS3Event> implements TeamspeakActionL
 		}
 	}
 	
+	/**
+	 * Mod Loader<br>
+	 * Loads all Mods & registers events according to the mod specifications<br>
+	 * only registers events which are required by at least one mod
+	 */
 	private void createFeatures(){
+		boolean serverEvent = false;
+		boolean channelEvent = false;
+		boolean textChannel = false;
+		boolean textPrivate = false;
+		boolean textServer = false;
 		for(String fnName : enabled_features.keySet()){
 			if(enabled_features.get(fnName)){
 				try {
@@ -84,6 +105,24 @@ public class Instance<E extends ModEvent & TS3Event> implements TeamspeakActionL
 							logger.fatal("object ist null!");
 						}
 						mods.add(obj);
+						if(obj.needs_Event_Server() || obj.needs_Event_Channel()){
+							event_joined.add(obj);
+							event_left.add(obj);
+						}
+						
+						if(obj.needs_Event_TextChannel() || obj.needs_Event_TextPrivate() || obj.needs_Event_TextServer())
+							event_chat.add(obj);
+						
+						if(obj.needs_Event_TextChannel())
+							textChannel = true;
+						if(obj.needs_Event_TextPrivate())
+							textPrivate = true;
+						if(obj.needs_Event_TextServer())
+							textServer = true;
+						if(obj.needs_Event_Server())
+							serverEvent = true;
+						if(obj.needs_Event_Channel())
+							channelEvent = true;
 					}else{
 						logger.fatal("Class not representing a mod! {}",fnName);
 					}
@@ -92,21 +131,40 @@ public class Instance<E extends ModEvent & TS3Event> implements TeamspeakActionL
 				}
 			}
 		}
+		ts3connector.registerEvents(serverEvent, channelEvent, textServer, textChannel, textPrivate);
 	}
 
 	@Override
 	public void teamspeakActionPerformed(String eventType, HashMap<String, String> eventInfo) {
 		if (eventType.equals("notifytextmessage")) {
-			// shandleChatMessage(eventInfo);
+			for(E i : event_chat){
+				i.handleTextMessage(eventType, eventInfo);
+			}
 		} else {
 			if ((eventType + eventInfo.toString()).equals(this.lastActionString)) { // double event firing bug
 				return;
 			}
+			if(eventType.equals("notifyclientleftview")){
+//				logger.info("running client left {}",event_joined.size());
+				for(E i : event_left){
+					i.handleClientLeft(eventInfo);
+				}
+			}else if(eventType.equals("notifycliententerview")){
+//				logger.info("running client joined {}",event_joined.size());
+				for(E i : event_joined){
+					i.handleClientJoined(eventInfo);
+				}
+			}else if(eventType.equals("notifyclientmoved")){
+				for(E i : event_move){
+					i.handleClientMoved(eventInfo);
+				}
+			}else{
+				logger.info("Unknown event: {}",eventType);
+			}
 			lastActionString = eventType + eventInfo.toString();
-			
 		}
 		
-		logger.debug("EVENT Instance: {}\n{}",SID,eventInfo);
+		//logger.debug("EVENT TYPE {} Instance: {}\n{}",eventType,SID,eventInfo);
 	}
 	
 	public void setConnectionRetry(boolean retry){
