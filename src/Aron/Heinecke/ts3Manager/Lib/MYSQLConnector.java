@@ -64,7 +64,6 @@ public class MYSQLConnector {
 	 */
 	public PreparedStatement prepareStm(String sql) throws SQLException{
 		PreparedStatement stm = connection.prepareStatement(sql);
-		stm.closeOnCompletion();
 		return stm;
 	}
 	

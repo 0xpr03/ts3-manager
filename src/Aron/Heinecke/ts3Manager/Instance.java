@@ -89,6 +89,7 @@ public class Instance<E extends ModEvent & TS3Event> implements TeamspeakActionL
 	 * Loads all Mods & registers events according to the mod specifications<br>
 	 * only registers events which are required by at least one mod
 	 */
+	@SuppressWarnings("unused")
 	private void createFeatures(){
 		boolean serverEvent = false;
 		boolean channelEvent = false;
@@ -140,6 +141,10 @@ public class Instance<E extends ModEvent & TS3Event> implements TeamspeakActionL
 		
 		if(mysql_required)
 			mysqlconnector = new MYSQLConnector();
+		
+		for(E i: mods){
+			i.handleReady();
+		}
 	}
 
 	@Override

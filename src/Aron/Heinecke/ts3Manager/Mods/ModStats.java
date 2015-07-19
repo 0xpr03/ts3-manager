@@ -24,12 +24,14 @@ public class ModStats implements ModEvent, TS3Event {
 	private TimerTask timerdosnapshot;
 	private PreparedStatement stm;
 	private String sql;
+	private String tableName;
 	
 	public ModStats(Instance<?> instance){
 		this.instance = instance;
 		logger.debug("Instance: {}",this.instance.getSID());
 		sql = "INSERT INTO %s (``) VALUES (?);";
-		sql.replaceFirst("%s", String.valueOf(instance.getSID()));
+		tableName = "ModStats_"+instance.getSID();
+		sql.replaceFirst("%s", tableName);
 		timerdosnapshot = new TimerTask() {
 			@Override
 			public void run() {
@@ -38,18 +40,17 @@ public class ModStats implements ModEvent, TS3Event {
 		};
 	}
 	
-	private synchronized void updateClients(){
+	private synchronized void updateClients() {
 		if(blocked){
 			return;
 		}
 		if(System.currentTimeMillis() - last_update > 1000){
-			HashMap<String, String> i;
 			try {
-				i = instance.getTS3Connection().getConnector().getInfo(JTS3ServerQuery.INFOMODE_SERVERINFO, 0);
+				int i = Integer.valueOf(instance.getTS3Connection().getConnector().getInfo(JTS3ServerQuery.INFOMODE_SERVERINFO, 0).get("virtualserver_clientsonline"));
 				logger.info("{}",i);
-//				stm.setInt(1, );
-//				stm.executeUpdate();
-			} catch (TS3ServerQueryException e) {
+				stm.setInt(1, i);
+				stm.executeUpdate();
+			} catch (TS3ServerQueryException | SQLException e) {
 				logger.error(e);
 			}
 			blocked = false;
@@ -104,22 +105,23 @@ public class ModStats implements ModEvent, TS3Event {
 
 	@Override
 	public void handleReady() {
-//		try{
-//			String table = "CREATE TABLE IF NOT EXISTS `%s` ("
-//				+" `clients` int(11) NOT NULL,"
-//				+" `timestamp` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,"
-//				+" PRIMARY KEY (`timestamp`)"
-//				+") ENGINE=InnoDB DEFAULT CHARSET=latin1 COMMENT='%d'";
-//			HashMap<String, String> i = instance.getTS3Connection().getConnector().getInfo(JTS3ServerQuery.INFOMODE_SERVERINFO, 0);
-//			instance.getMysqlconnector().execUpdateQuery(table.replace("%s", "ModStats_"+instance.getSID()));
-//		}catch(SQLException | TS3ServerQueryException e){
-//			logger.error("{}",e);
-//		}
+		try{
+			String table = "CREATE TABLE IF NOT EXISTS `%s` ("
+				+" `clients` int(11) NOT NULL,"
+				+" `timestamp` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,"
+				+" PRIMARY KEY (`timestamp`)"
+				+") ENGINE=InnoDB DEFAULT CHARSET=latin1 COMMENT='%d'";
+			table.replace("%d", instance.getTS3Connection().getConnector().getInfo(JTS3ServerQuery.INFOMODE_SERVERINFO, 0).get("virtualserver_name"));
+			instance.getMysqlconnector().execUpdateQuery(table.replace("%s", tableName));
+		}catch(SQLException | TS3ServerQueryException e){
+			logger.error("{}",e);
+		}
 		try {
 			stm = instance.getMysqlconnector().prepareStm(sql);
 		} catch (SQLException e) {
 			logger.error("{}",e);
 		}
+		updateClients();
 	}
 
 	@Override
@@ -137,7 +139,8 @@ public class ModStats implements ModEvent, TS3Event {
 		timerdosnapshot.cancel();
 		timer.cancel();
 		try {
-			stm.close();
+			if(stm != null)
+				stm.close();
 		} catch (SQLException e) {}
 	}
 }
