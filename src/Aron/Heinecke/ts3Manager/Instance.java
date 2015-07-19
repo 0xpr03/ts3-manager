@@ -88,6 +88,7 @@ public class Instance<E extends ModEvent & TS3Event> implements TeamspeakActionL
 	 * Mod Loader<br>
 	 * Loads all Mods & registers events according to the mod specifications<br>
 	 * only registers events which are required by at least one mod
+	 * Finally tells all mods that they can start their init process
 	 */
 	private void createFeatures(){
 		boolean serverEvent = false;

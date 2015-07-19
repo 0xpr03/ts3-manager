@@ -5,6 +5,7 @@ package de.stefan1200.jts3serverquery;
  * @author Stefan Martens
  * @since 2.0
  */
+@SuppressWarnings("serial")
 public class TS3ServerQueryException extends Exception
 {
 	String apiMethodName;
