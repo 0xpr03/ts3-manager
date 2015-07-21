@@ -84,13 +84,13 @@ public class ModStats implements ModEvent, TS3Event {
 
 	@Override
 	public void handleClientJoined(HashMap<String, String> eventInfo) {
-		logger.debug("Client joined");
+		logger.debug("Client joined {}",tableName);
 		updateClients();
 	}
 
 	@Override
 	public void handleClientLeft(HashMap<String, String> eventInfo) {
-		logger.debug("Client left");
+		logger.debug("Client left {}",tableName);
 		updateClients();
 	}
 
