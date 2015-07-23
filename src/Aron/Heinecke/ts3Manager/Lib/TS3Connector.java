@@ -154,7 +154,6 @@ public class TS3Connector<U extends TeamspeakActionListener> {
 	 * Needs to run all 
 	 */
 	private void checkConnect() {
-		logger.entry();
 		try {
 			if ( !query.isConnected() ) {
 				logger.warn("DC!");
@@ -165,6 +164,5 @@ public class TS3Connector<U extends TeamspeakActionListener> {
 		} catch (Exception e) {
 			logger.error(e);
 		}
-		logger.exit();
 	}
 }
