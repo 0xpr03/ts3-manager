@@ -136,6 +136,9 @@ public class Instance<E extends ModEvent & TS3Event> implements TeamspeakActionL
 	@Override
 	public void teamspeakActionPerformed(String eventType, HashMap<String, String> eventInfo) {
 		if (eventType.equals("notifytextmessage")) {
+			if ( Integer.parseInt(eventInfo.get("invokerid")) == ts3connector.getConnector().getCurrentQueryClientID() ) {
+				return;
+			}
 			for(E i : event_chat){
 				i.handleTextMessage(eventType, eventInfo);
 			}
