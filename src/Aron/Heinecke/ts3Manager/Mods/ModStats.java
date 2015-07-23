@@ -31,11 +31,11 @@ public class ModStats implements ModEvent, TS3Event {
 	private TimerTask timerdosnapshot;
 	private Timer bufferTimer;
 	private TimerTask taskBuffer;
-	private PreparedStatement stm;
+	private PreparedStatement stm = null;
 	private String sql;
 	private String tableName;
-	private MYSQLConnector conn;
-	private Buffer<DatElem> buffer = new Buffer<DatElem>(2);
+	private MYSQLConnector conn = null;
+	private Buffer<DataElem> buffer = new Buffer<DataElem>(2);
 
 	public ModStats(Instance<?> instance) {
 		this.instance = instance;
@@ -64,14 +64,17 @@ public class ModStats implements ModEvent, TS3Event {
 	private void insertBuffer(){
 		try{
 			long time = System.currentTimeMillis();
-			conn = new MYSQLConnector();
-			stm = conn.prepareStm(sql);
 			buffer.swap();
 			int size = buffer.getLastChannel().size();
-			for(DatElem de : buffer.getLastChannel()){
+			if(size == 0)
+				return;
+			conn = new MYSQLConnector();
+			stm = conn.prepareStm(sql);
+			for(DataElem de : buffer.getLastChannel()){
 				stm.setTimestamp(1, de.getTimestamp());
 				stm.setInt(2, de.getClients());
 				stm.setInt(3, de.getQueryclients());
+				stm.executeUpdate();
 			}
 			buffer.clearOldChannel();
 			stm.close();
@@ -103,7 +106,7 @@ public class ModStats implements ModEvent, TS3Event {
 	private void addUpdate() {
 		try {
 			HashMap<String, String> i = getInfo();
-			buffer.add(new DatElem(Integer.valueOf(i.get("virtualserver_clientsonline")),
+			buffer.add(new DataElem(Integer.valueOf(i.get("virtualserver_clientsonline")),
 					Integer.valueOf(i.get("virtualserver_queryclientsonline"))));
 		} catch (TS3ServerQueryException e) {
 			logger.error(e);
@@ -192,7 +195,8 @@ public class ModStats implements ModEvent, TS3Event {
 				if (!stm.isClosed())
 					stm.close();
 			}
-			conn.disconnect();
+			if(conn != null)
+				conn.disconnect();
 		} catch (SQLException e) {
 		}
 		taskBuffer.cancel();
@@ -202,12 +206,12 @@ public class ModStats implements ModEvent, TS3Event {
 		logger.exit();
 	}
 
-	class DatElem {
+	class DataElem {
 		private Timestamp timestamp;
 		private int clients;
 		private int queryclients;
 
-		public DatElem(int clients, int queryclients) {
+		public DataElem(int clients, int queryclients) {
 			this.timestamp = new Timestamp(System.currentTimeMillis());
 			this.clients = clients;
 			this.queryclients = queryclients;
