@@ -6,12 +6,12 @@ import java.sql.Timestamp;
 import java.util.HashMap;
 import java.util.Timer;
 import java.util.TimerTask;
-import java.util.Vector;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import Aron.Heinecke.ts3Manager.Instance;
+import Aron.Heinecke.ts3Manager.Lib.Buffer;
 import Aron.Heinecke.ts3Manager.Lib.MYSQLConnector;
 import Aron.Heinecke.ts3Manager.Lib.API.ModEvent;
 import Aron.Heinecke.ts3Manager.Lib.API.TS3Event;
@@ -20,7 +20,7 @@ import de.stefan1200.jts3serverquery.TS3ServerQueryException;
 
 /**
  * ModStats server usage statistics
- * 
+ * Non-Blocking 
  * @author Aron Heinecke
  */
 public class ModStats implements ModEvent, TS3Event {
@@ -35,7 +35,7 @@ public class ModStats implements ModEvent, TS3Event {
 	private String sql;
 	private String tableName;
 	private MYSQLConnector conn;
-	private Vector<DatElem> buffer = new Vector<DatElem>();
+	private Buffer<DatElem> buffer = new Buffer<DatElem>(2);
 
 	public ModStats(Instance<?> instance) {
 		this.instance = instance;
@@ -66,17 +66,18 @@ public class ModStats implements ModEvent, TS3Event {
 			long time = System.currentTimeMillis();
 			conn = new MYSQLConnector();
 			stm = conn.prepareStm(sql);
-			Vector<DatElem> copyBuffer = buffer; // non-deep copy
-			for(DatElem de : copyBuffer){
+			buffer.swap();
+			int size = buffer.getLastChannel().size();
+			for(DatElem de : buffer.getLastChannel()){
 				stm.setTimestamp(1, de.getTimestamp());
 				stm.setInt(2, de.getClients());
 				stm.setInt(3, de.getQueryclients());
-				buffer.remove(de);
 			}
+			buffer.clearOldChannel();
 			stm.close();
 			conn.disconnect();
-			logger.debug("Buffer flushed in {} MS, {} entrys",System.currentTimeMillis() - time,copyBuffer.size());
-		}catch(SQLException e){
+			logger.debug("Buffer flushed in {} MS, {} entrys",System.currentTimeMillis() - time,size);
+		}catch(SQLException | java.util.ConcurrentModificationException e){
 			logger.error(e);
 		}
 	}
