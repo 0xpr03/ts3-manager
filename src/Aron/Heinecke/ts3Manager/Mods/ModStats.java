@@ -11,7 +11,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import Aron.Heinecke.ts3Manager.Instance;
-import Aron.Heinecke.ts3Manager.Lib.Buffer;
+import Aron.Heinecke.ts3Manager.Lib.SBuffer;
 import Aron.Heinecke.ts3Manager.Lib.MYSQLConnector;
 import Aron.Heinecke.ts3Manager.Lib.API.ModEvent;
 import Aron.Heinecke.ts3Manager.Lib.API.TS3Event;
@@ -35,7 +35,7 @@ public class ModStats implements ModEvent, TS3Event {
 	private String sql;
 	private String tableName;
 	private MYSQLConnector conn = null;
-	private Buffer<DataElem> buffer = new Buffer<DataElem>(2);
+	private SBuffer<DataElem> sBuffer = new SBuffer<DataElem>(2);
 
 	public ModStats(Instance<?> instance) {
 		this.instance = instance;
@@ -64,19 +64,19 @@ public class ModStats implements ModEvent, TS3Event {
 	private void insertBuffer(){
 		try{
 			long time = System.currentTimeMillis();
-			buffer.swap();
-			int size = buffer.getLastChannel().size();
+			sBuffer.swap();
+			int size = sBuffer.getLastChannelSize();
 			if(size == 0)
 				return;
 			conn = new MYSQLConnector();
 			stm = conn.prepareStm(sql);
-			for(DataElem de : buffer.getLastChannel()){
+			for(DataElem de : sBuffer.getLastChannel()){
 				stm.setTimestamp(1, de.getTimestamp());
 				stm.setInt(2, de.getClients());
 				stm.setInt(3, de.getQueryclients());
 				stm.executeUpdate();
 			}
-			buffer.clearOldChannel();
+			sBuffer.clearOldChannel();
 			stm.close();
 			conn.disconnect();
 			logger.debug("Buffer flushed in {} MS, {} entrys",System.currentTimeMillis() - time,size);
@@ -106,7 +106,7 @@ public class ModStats implements ModEvent, TS3Event {
 	private void addUpdate() {
 		try {
 			HashMap<String, String> i = getInfo();
-			buffer.add(new DataElem(Integer.valueOf(i.get("virtualserver_clientsonline")),
+			sBuffer.add(new DataElem(Integer.valueOf(i.get("virtualserver_clientsonline")),
 					Integer.valueOf(i.get("virtualserver_queryclientsonline"))));
 		} catch (TS3ServerQueryException e) {
 			logger.error(e);

@@ -65,7 +65,6 @@ public class TS3Manager {
 		Runtime.getRuntime().addShutdownHook(new Thread() {
 			@Override
 			public void run() {
-				logger.entry();
 				for(Instance<?> i : instances){
 					i.shutdown();
 				}
