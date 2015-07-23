@@ -54,8 +54,6 @@ public class ModStats implements ModEvent, TS3Event {
 				insertBuffer();
 			}
 		};
-		bufferTimer = new Timer(true);
-		bufferTimer.schedule(taskBuffer, 15*60*1000,15*60*1000); // 15 min
 	}
 	
 	/**
@@ -174,6 +172,9 @@ public class ModStats implements ModEvent, TS3Event {
 			logger.error("{}", e);
 		}
 		updateClients();
+		insertBuffer();
+		bufferTimer = new Timer(true);
+		bufferTimer.schedule(taskBuffer, 15*60*1000,15*60*1000); // 15 min
 	}
 
 	@Override
