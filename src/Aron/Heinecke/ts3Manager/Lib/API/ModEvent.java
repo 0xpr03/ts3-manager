@@ -11,8 +11,6 @@ public interface ModEvent {
 	public abstract boolean needs_Event_TextChannel();
 	public abstract boolean needs_Event_TextPrivate();
 	public abstract boolean needs_Event_TextServer();
-	public abstract boolean needs_MYSQL();
-	
 	/**
 	 * Called when all required things are ready
 	 */

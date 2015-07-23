@@ -49,6 +49,7 @@ public class MYSQLConnector {
 	 */
 	public void disconnect(){
 		try {
+			if(!connection.isClosed())
 			connection.close();
 		} catch (SQLException e) {
 			logger.error("Error on mysql connection closing {}",e);
