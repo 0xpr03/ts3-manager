@@ -23,12 +23,10 @@ public class MYSQLConnector {
 	public MYSQLConnector(){
 		String base = "jdbc:mariadb://";
 		
-		logger.info("Starting database connection");
 		base = base+Config.getStrValue("MYSQL_IP")+":"+Config.getIntValue("MYSQL_PORT");
 		base += "/"+Config.getStrValue("MYSQL_DB");
 		base +="?tcpKeepAlive=true";
 		boolean success = false;
-		logger.debug("DB conn base: {} {} {}",base,Config.getStrValue("MYSQL_USER"), Config.getStrValue("MYSQL_PASSWORD"));
 		try{
 			connection = DriverManager.getConnection(base, Config.getStrValue("MYSQL_USER"), Config.getStrValue("MYSQL_PASSWORD"));
 			success = true;
