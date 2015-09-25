@@ -77,8 +77,9 @@ public class ModStats implements ModEvent, TS3Event {
 			sBuffer.clearOldChannel();
 			stm.close();
 			conn.disconnect();
-			logger.debug("Buffer flushed in {} MS, {} entrys",System.currentTimeMillis() - time,size);
+			logger.debug("Buffer for {} flushed in {} MS, {} entrys",instance.getSID(),System.currentTimeMillis() - time,size);
 		}catch(SQLException | java.util.ConcurrentModificationException e){
+			logger.error("Error flusing Buffer of SID {}",instance.getSID());
 			logger.error(e);
 		}
 	}

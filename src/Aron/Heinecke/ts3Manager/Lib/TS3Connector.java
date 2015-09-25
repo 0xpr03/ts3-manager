@@ -95,7 +95,7 @@ public class TS3Connector<U extends TeamspeakActionListener> {
 			registerEvent(JTS3ServerQuery.EVENT_MODE_TEXTPRIVATE, text_private);
 		return true;
 		} catch (TS3ServerQueryException e) {
-			logger.error("Error registering events! {}",e);
+			logger.error("Error registering events for SID {}! {}",sID,e);
 			return false;
 		}
 	}
@@ -156,9 +156,10 @@ public class TS3Connector<U extends TeamspeakActionListener> {
 	private void checkConnect() {
 		try {
 			if ( !query.isConnected() ) {
-				logger.warn("DC!");
+				logger.warn("disconnect on SID {}!",sID);
 				connect();
 			} else {
+				logger.trace("still connected {}",sID);
 				query.doCommand("hostinfo");
 			}
 		} catch (Exception e) {

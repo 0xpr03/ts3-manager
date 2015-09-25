@@ -70,7 +70,7 @@ public class Instance<E extends ModEvent & TS3Event> implements TeamspeakActionL
 		try {
 			return new TS3Connector<U>(i, SID, Config.getStrValue("TS3_IP"), Config.getIntValue("TS3_PORT"), Config.getStrValue("TS3_USER"), Config.getStrValue("TS3_PASSWORD"),BOT_NAME,CHANNEL);
 		} catch (TS3ServerQueryException e) {
-			logger.warn("{}",e);
+			logger.warn("{} for SID {}",e, SID);
 			return null;
 		}
 	}
