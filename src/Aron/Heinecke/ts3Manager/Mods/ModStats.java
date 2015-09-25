@@ -166,7 +166,7 @@ public class ModStats implements ModEvent, TS3Event {
 			String table = String.format("CREATE TABLE IF NOT EXISTS `%s` (" + " `clients` int(11) NOT NULL,"
 					+ " `queryclients` int(11) NOT NULL," + " `timestamp` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,"
 					+ " PRIMARY KEY (`timestamp`)"
-					+ ") ENGINE=InnoDB DEFAULT CHARSET=latin1 COMMENT='%s'", tableName, instance.getTS3Connection()
+					+ ") ENGINE=InnoDB DEFAULT CHARSET=latin1 ROW_FORMAT=COMPRESSED COMMENT='%s'", tableName, instance.getTS3Connection()
 							.getConnector().getInfo(JTS3ServerQuery.INFOMODE_SERVERINFO, 0).get("virtualserver_name"));
 			new MYSQLConnector().execUpdateQuery(table);
 		} catch (SQLException | TS3ServerQueryException e) {

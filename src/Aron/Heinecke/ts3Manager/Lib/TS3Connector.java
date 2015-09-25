@@ -18,7 +18,7 @@ import de.stefan1200.jts3serverquery.TeamspeakActionListener;
 public class TS3Connector<U extends TeamspeakActionListener> {
 	Logger logger = LogManager.getLogger();
 	JTS3ServerQuery query;
-	private int id;
+	private int sID;
 	private String ip;
 	private int port;
 	private String user;
@@ -29,9 +29,15 @@ public class TS3Connector<U extends TeamspeakActionListener> {
 	private Timer timer = null;
 	private TimerTask timertask = null;
 	
+	private boolean serverEvent = false;
+	private boolean channelEvent = false;
+	private boolean textChannel = false;
+	private boolean textPrivate = false;
+	private boolean textServer = false;
+	
 	public TS3Connector(U listener, int id, String ip, int port, String user, String password, String name,int channel) throws TS3ServerQueryException{
 		query = new JTS3ServerQuery();
-		this.id = id;
+		this.sID = id;
 		this.ip = ip;
 		this.password = password;
 		this.name = name;
@@ -52,7 +58,7 @@ public class TS3Connector<U extends TeamspeakActionListener> {
 		try{
 			query.connectTS3Query(ip, port);
 			query.loginTS3(user, password);
-			query.selectVirtualServer(id);
+			query.selectVirtualServer(sID);
 			query.setTeamspeakActionListener(listener);
 			
 		}catch (TS3ServerQueryException sqe){
@@ -78,22 +84,37 @@ public class TS3Connector<U extends TeamspeakActionListener> {
 	}
 	
 	/**
-	 * Register for events to be handled
-	 * @param server
-	 * @param channel
-	 * @param text_server
-	 * @param text_channel
-	 * @param text_private
-	 * @return
+	 * Registers events and stores the enabled events in case of a re-connect.
+	 * @param server_event
+	 * @param channel_event
+	 * @param text_server_event
+	 * @param text_channel_event
+	 * @param text_private_event
+	 * @return success
 	 */
-	public boolean registerEvents(boolean server, boolean channel, boolean text_server, boolean text_channel, boolean text_private){
+	public boolean registerEvents(boolean server_event, boolean channel_event, boolean text_server_event, boolean text_channel_event
+			, boolean text_private_event){
+		serverEvent = server_event;
+		channelEvent = channel_event;
+		textServer = text_server_event;
+		textPrivate = text_private_event;
+		textChannel = text_channel_event;
+		return registerEvents();
+	}
+	
+	/**
+	 * Event register caller
+	 * Uses stored internal booleans
+	 * @return success
+	 */
+	private boolean registerEvents(){
 		try {
-			registerEvent(JTS3ServerQuery.EVENT_MODE_SERVER, server);
-			registerEvent(JTS3ServerQuery.EVENT_MODE_CHANNEL, channel);
-			registerEvent(JTS3ServerQuery.EVENT_MODE_TEXTSERVER, text_server);
-			registerEvent(JTS3ServerQuery.EVENT_MODE_TEXTCHANNEL, text_channel);
-			registerEvent(JTS3ServerQuery.EVENT_MODE_TEXTPRIVATE, text_private);
-		return true;
+			registerEvent(JTS3ServerQuery.EVENT_MODE_SERVER, serverEvent);
+			registerEvent(JTS3ServerQuery.EVENT_MODE_CHANNEL, channelEvent);
+			registerEvent(JTS3ServerQuery.EVENT_MODE_TEXTSERVER, textServer);
+			registerEvent(JTS3ServerQuery.EVENT_MODE_TEXTCHANNEL, textChannel);
+			registerEvent(JTS3ServerQuery.EVENT_MODE_TEXTPRIVATE, textPrivate);
+			return true;
 		} catch (TS3ServerQueryException e) {
 			logger.error("Error registering events for SID {}! {}",sID,e);
 			return false;
@@ -158,6 +179,7 @@ public class TS3Connector<U extends TeamspeakActionListener> {
 			if ( !query.isConnected() ) {
 				logger.warn("disconnect on SID {}!",sID);
 				connect();
+				registerEvents();
 			} else {
 				logger.trace("still connected {}",sID);
 				query.doCommand("hostinfo");
