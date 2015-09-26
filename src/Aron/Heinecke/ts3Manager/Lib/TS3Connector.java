@@ -178,14 +178,19 @@ public class TS3Connector<U extends TeamspeakActionListener> {
 	private void checkConnect() {
 		try {
 			if ( query.isConnected() ) {
-				if((query.doCommand("serverinfo").get("virtualserver_status").equals("online")))
+				if((query.doCommand("serverinfo").get("response").contains("virtualserver_status=online")))
 						return;
 			}
 			logger.warn("disconnect on SID {}!",sID);
-			connect();
-			registerEvents();
+			try {
+				query.closeTS3Connection();
+				connect();
+				registerEvents();
+			} catch (Exception e) {
+				logger.error("Reconnect failed for SID {} \n{}", sID,e.getMessage());
+			}
 		} catch (Exception e) {
-			logger.error("Error during connection check for SID {} {}", sID,e);
+			logger.error("Error during connection check for SID {} \n{}", sID,e.getMessage());
 		}
 	}
 }

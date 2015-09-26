@@ -16,7 +16,7 @@ import Aron.Heinecke.ts3Manager.Lib.ConfigLib;
  */
 public class TS3Manager {
 	private static Logger logger = LogManager.getLogger();
-	private static String VERSION = "0.2 beta";
+	private static String VERSION = "0.2.2 beta";
 	@SuppressWarnings("rawtypes")
 	private static List<Instance> instances = new ArrayList<Instance>();
 	
