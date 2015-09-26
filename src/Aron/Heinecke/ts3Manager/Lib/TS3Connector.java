@@ -172,20 +172,20 @@ public class TS3Connector<U extends TeamspeakActionListener> {
 	}
 	
 	/**
-	 * Needs to run all 
+	 * Checks if the connnection is still alive & the server status is online<br>
+	 * Will otherwise try to reconnect & register it's events
 	 */
 	private void checkConnect() {
 		try {
-			if ( !query.isConnected() ) {
-				logger.warn("disconnect on SID {}!",sID);
-				connect();
-				registerEvents();
-			} else {
-				logger.trace("still connected {}",sID);
-				query.doCommand("hostinfo");
+			if ( query.isConnected() ) {
+				if((query.doCommand("serverinfo").get("virtualserver_status").equals("online")))
+						return;
 			}
+			logger.warn("disconnect on SID {}!",sID);
+			connect();
+			registerEvents();
 		} catch (Exception e) {
-			logger.error(e);
+			logger.error("Error during connection check for SID {} {}", sID,e);
 		}
 	}
 }
