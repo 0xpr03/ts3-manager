@@ -40,18 +40,31 @@ public class Instance<E extends ModEvent & TS3Event> implements TeamspeakActionL
 	 * @param CHANNEL
 	 * @param features
 	 */
-	public Instance(int SID, String BOT_NAME, int CHANNEL, HashMap<String, Boolean> features){
+	public Instance(final int SID, String BOT_NAME, int CHANNEL, HashMap<String, Boolean> features){
 		this.SID = SID;
 		this.BOT_NAME = BOT_NAME;
 		this.CHANNEL = CHANNEL;
 		this.enabled_features = features;
-		boolean connected = false;
 		retry = Config.getBoolValue("CONNECTIONS_RETRY");
-		do {
-			ts3connector = getTS3Connector(this);
-			connected = ts3connector != null;
-		} while(!connected && retry);
-		createFeatures();
+		Thread t = new Thread(){
+			public void run(){
+				boolean connected = false;
+				do {
+					ts3connector = getTS3Connector(getInstance());
+					connected = ts3connector != null;
+				} while(!connected && retry);
+				if(connected)
+					createFeatures();
+				else{
+					logger.error("Failed to connect to SID {}, disabling instance.", SID);
+				}
+			}
+		};
+		t.start();
+	}
+	
+	private Instance<E> getInstance(){
+		return this;
 	}
 	
 	public void shutdown(){
