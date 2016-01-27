@@ -2,8 +2,10 @@ package de.stefan1200.jts3serverquery;
 
 import java.io.BufferedReader;
 import java.io.EOFException;
+import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintStream;
+import java.io.UnsupportedEncodingException;
 import java.net.InetAddress;
 import java.net.Socket;
 import java.net.SocketException;
@@ -17,10 +19,10 @@ import java.util.TimerTask;
 import java.util.Vector;
 
 /**
- * JTS3ServerQuery library version 2.0.2
+ * JTS3ServerQuery library version 2.0.3
  * <br><br>
  * This library allows you to create a query connection to the Teamspeak 3 telnet interface.
- * Almost anything is supported: Query lists or just informations, get log entries, receiving events, add or delete complains, kick or move clients and of course send own commands.
+ * Almost anything is supported: Query lists or just information, get log entries, receiving events, add or delete complains, kick or move clients and of course send own commands.
  * <br><br>
  * This library is free for use, but please notify me if you found a bug or if you have some suggestion.
  * The author of this library is not responsible for any damage or data loss!
@@ -30,7 +32,7 @@ import java.util.Vector;
  * <b>Homepage:</b><br><a href="http://www.stefan1200.de" target="_blank">http://www.stefan1200.de</a>
  * 
  * @author Stefan Martens
- * @version 2.0.2 Final (06.07.2015)
+ * @version 2.0.3 (31.10.2015)
  */
 public class JTS3ServerQuery
 {
@@ -157,28 +159,41 @@ public class JTS3ServerQuery
 	public static final int LISTMODE_SERVERGROUPCLIENTLIST = 9;
 	
 	/**
-	 * Info mode for getInfo(), use this mode to get informations about the current selected server.
+	 * List mode for getList(), use this mode to get a list of server groups from a client.<br><br>
+	 * Required argument:<br>
+	 * <code>cldbid=&lt;client database ID&gt;</code>
+	 * <br><br>
+	 * For example:<br>
+	 * <code>cldbid=159</code>
+	 * @since 2.0.3
+	 * @see JTS3ServerQuery#getList(int)
+	 * @see JTS3ServerQuery#getList(int, String)
+	 */
+	public static final int LISTMODE_SERVERGROUPSBYCLIENTID = 10;
+	
+	/**
+	 * Info mode for getInfo(), use this mode to get information about the current selected server.
 	 * The second parameter is not needed, just use a number like 0.
 	 * @see JTS3ServerQuery#getInfo(int, int)
 	 */
 	public static final int INFOMODE_SERVERINFO = 11;
 	
 	/**
-	 * Info mode for getInfo(), use this mode to get informations about a channel.
+	 * Info mode for getInfo(), use this mode to get information about a channel.
 	 * The second parameter has to be a channel id.
 	 * @see JTS3ServerQuery#getInfo(int, int)
 	 */
 	public static final int INFOMODE_CHANNELINFO = 12;
 	
 	/**
-	 * Info mode for getInfo(), use this mode to get informations about a client.
+	 * Info mode for getInfo(), use this mode to get information about a client.
 	 * The second parameter has to be a client id.
 	 * @see JTS3ServerQuery#getInfo(int, int)
 	 */
 	public static final int INFOMODE_CLIENTINFO = 13;
 	
 	/**
-	 * Info mode for getInfo(), use this mode to get informations about a client from the database.
+	 * Info mode for getInfo(), use this mode to get information about a client from the database.
 	 * The second parameter has to be a client database id.
 	 * @since 2.0.2
 	 * @see JTS3ServerQuery#getInfo(int, int)
@@ -392,6 +407,7 @@ public class JTS3ServerQuery
 	
 	/**
 	 * Remove the class from receiving Teamspeak events. This function also call removeAllEvents(), if needed.
+	 * @throws TS3ServerQueryException If the TS3 server is returning an error code/message.
 	 * @since 0.7
 	 */
 	public void removeTeamspeakActionListener()
@@ -465,7 +481,7 @@ public class JTS3ServerQuery
 		HashMap<String, String> hmIn = doInternalCommand(command);
 		if (!hmIn.get("id").equals("0"))
 		{
-			throw new TS3ServerQueryException("addEventNotify()", hmIn.get("id"), hmIn.get("msg"), hmIn.get("extra_msg"), hmIn.get("failed_permid"));
+			throw new TS3ServerQueryException("addEventNotify("+Integer.toString(eventMode)+", "+Integer.toString(channelID)+")", hmIn.get("id"), hmIn.get("msg"), hmIn.get("extra_msg"), hmIn.get("failed_permid"));
 		}
 		
 		if (eventNotifyTimerTask == null)
@@ -659,7 +675,7 @@ public class JTS3ServerQuery
 		hmIn = doInternalCommand("login " + encodeTS3String(loginname) + " " + encodeTS3String(password));
 		if (!hmIn.get("id").equals("0"))
 		{
-			throw new TS3ServerQueryException("loginTS3()", hmIn.get("id"), hmIn.get("msg"), hmIn.get("extra_msg"), hmIn.get("failed_permid"));
+			throw new TS3ServerQueryException("loginTS3("+loginname+", hidden)", hmIn.get("id"), hmIn.get("msg"), hmIn.get("extra_msg"), hmIn.get("failed_permid"));
 		}
 		
 		updateClientIDChannelID();
@@ -689,7 +705,7 @@ public class JTS3ServerQuery
 		HashMap<String, String> hmIn = doInternalCommand("clientupdate client_nickname=" + encodeTS3String(displayName));
 		if (!hmIn.get("id").equals("0"))
 		{
-			throw new TS3ServerQueryException("setDisplayName()", hmIn.get("id"), hmIn.get("msg"), hmIn.get("extra_msg"), hmIn.get("failed_permid"));
+			throw new TS3ServerQueryException("setDisplayName("+displayName+")", hmIn.get("id"), hmIn.get("msg"), hmIn.get("extra_msg"), hmIn.get("failed_permid"));
 		}
 		
 		queryCurrentClientName = displayName;
@@ -755,7 +771,7 @@ public class JTS3ServerQuery
 		hmIn = doInternalCommand(command);
 		if (!hmIn.get("id").equals("0"))
 		{
-			throw new TS3ServerQueryException("selectVirtualServer()", hmIn.get("id"), hmIn.get("msg"), hmIn.get("extra_msg"), hmIn.get("failed_permid"));
+			throw new TS3ServerQueryException("selectVirtualServer("+Integer.toString(server)+", "+(selectPort ? "true" : "false")+", "+(virtual ? "true" : "false")+")", hmIn.get("id"), hmIn.get("msg"), hmIn.get("extra_msg"), hmIn.get("failed_permid"));
 		}
 		
 		updateClientIDChannelID();
@@ -869,7 +885,7 @@ public class JTS3ServerQuery
 		hmIn = doInternalCommand(command);
 		if (!hmIn.get("id").equals("0"))
 		{
-			throw new TS3ServerQueryException("deleteChannel()", hmIn.get("id"), hmIn.get("msg"), hmIn.get("extra_msg"), hmIn.get("failed_permid"));
+			throw new TS3ServerQueryException("deleteChannel("+Integer.toString(channelID)+", "+(forceDelete ? "true" : "false")+")", hmIn.get("id"), hmIn.get("msg"), hmIn.get("extra_msg"), hmIn.get("failed_permid"));
 		}
 		
 		if (queryCurrentChannelID == channelID)
@@ -905,7 +921,7 @@ public class JTS3ServerQuery
 		hmIn = doInternalCommand(command);
 		if (!hmIn.get("id").equals("0"))
 		{
-			throw new TS3ServerQueryException("moveClient()", hmIn.get("id"), hmIn.get("msg"), hmIn.get("extra_msg"), hmIn.get("failed_permid"));
+			throw new TS3ServerQueryException("moveClient("+Integer.toString(clientID)+", "+Integer.toString(channelID)+", hidden)", hmIn.get("id"), hmIn.get("msg"), hmIn.get("extra_msg"), hmIn.get("failed_permid"));
 		}
 		
 		if (clientID == queryCurrentClientID)
@@ -917,13 +933,13 @@ public class JTS3ServerQuery
 	
 	/**
 	 * Kick a client from channel or from server.
-	 * @param cientID The Client ID to be kicked
+	 * @param clientID The Client ID to be kicked
 	 * @param onlyChannelKick <code>true</code> for a channel kick, <code>false</code> for a server kick
 	 * @param kickReason The kick reason
 	 * @throws TS3ServerQueryException If the TS3 server is returning an error code/message.
 	 * @throws IllegalStateException If not connected to a TS3 server.
 	 */
-	public void kickClient(int cientID, boolean onlyChannelKick, String kickReason)
+	public void kickClient(int clientID, boolean onlyChannelKick, String kickReason)
 	throws TS3ServerQueryException
 	{
 		if (!isConnected())
@@ -939,12 +955,12 @@ public class JTS3ServerQuery
 			command += " reasonmsg=" + encodeTS3String(kickReason);
 		}
 		
-		command += " clid=" + Integer.toString(cientID);
+		command += " clid=" + Integer.toString(clientID);
 		
 		hmIn = doInternalCommand(command);
 		if (!hmIn.get("id").equals("0"))
 		{
-			throw new TS3ServerQueryException("kickClient()", hmIn.get("id"), hmIn.get("msg"), hmIn.get("extra_msg"), hmIn.get("failed_permid"));
+			throw new TS3ServerQueryException("kickClient("+Integer.toString(clientID)+", "+(onlyChannelKick ? "true" : "false")+kickReason+")", hmIn.get("id"), hmIn.get("msg"), hmIn.get("extra_msg"), hmIn.get("failed_permid"));
 		}
 	}
 	
@@ -1117,7 +1133,7 @@ public class JTS3ServerQuery
 		
 		if (!hmIn.get("id").equals("0"))
 		{
-			throw new TS3ServerQueryException("sendTextMessage()", hmIn.get("id"), hmIn.get("msg"), hmIn.get("extra_msg"), hmIn.get("failed_permid"));
+			throw new TS3ServerQueryException("sendTextMessage("+Integer.toString(targetID)+", "+Integer.toString(targetMode)+", "+msg+", hidden)", hmIn.get("id"), hmIn.get("msg"), hmIn.get("extra_msg"), hmIn.get("failed_permid"));
 		}
 	}
 	
@@ -1196,7 +1212,7 @@ public class JTS3ServerQuery
 		
 		if (!hmIn.get("id").equals("0"))
 		{
-			throw new TS3ServerQueryException("pokeClient()", hmIn.get("id"), hmIn.get("msg"), hmIn.get("extra_msg"), hmIn.get("failed_permid"));
+			throw new TS3ServerQueryException("pokeClient("+Integer.toString(clientID)+", "+msg+")", hmIn.get("id"), hmIn.get("msg"), hmIn.get("extra_msg"), hmIn.get("failed_permid"));
 		}
 	}
 	
@@ -1227,7 +1243,7 @@ public class JTS3ServerQuery
 		
 		if (!hmIn.get("id").equals("0"))
 		{
-			throw new TS3ServerQueryException("complainAdd()", hmIn.get("id"), hmIn.get("msg"), hmIn.get("extra_msg"), hmIn.get("failed_permid"));
+			throw new TS3ServerQueryException("complainAdd("+Integer.toString(clientDBID)+", "+msg+")", hmIn.get("id"), hmIn.get("msg"), hmIn.get("extra_msg"), hmIn.get("failed_permid"));
 		}
 	}
 	
@@ -1253,7 +1269,7 @@ public class JTS3ServerQuery
 		
 		if (!hmIn.get("id").equals("0"))
 		{
-			throw new TS3ServerQueryException("complainDelete()", hmIn.get("id"), hmIn.get("msg"), hmIn.get("extra_msg"), hmIn.get("failed_permid"));
+			throw new TS3ServerQueryException("complainDelete("+Integer.toString(clientDBID)+", "+Integer.toString(deleteClientDBID)+")", hmIn.get("id"), hmIn.get("msg"), hmIn.get("extra_msg"), hmIn.get("failed_permid"));
 		}
 	}
 	
@@ -1276,16 +1292,16 @@ public class JTS3ServerQuery
 	 * <b>Notice:</b><br>
 	 * Don't use this for help messages, since they are already formatted by the TS3 server!<br>
 	 * If you only have a single line response, you can also use the parseLine() method!
-	 * @param rawData The unformatted TS3 server response
+	 * @param rawData The unformatted TS3 server response.
 	 * @return A Vector which contains a HashMap for each entry with the keys given by the TS3 Server.
-	 * @throws NullPointerException If rawData is <code>null</code>
+	 * @throws NullPointerException If rawData is <code>null</code>.
 	 * @see JTS3ServerQuery#parseLine(String)
 	 */
 	public Vector<HashMap<String, String>> parseRawData(String rawData)
 	{
 		if (rawData == null)
 		{
-			throw new NullPointerException("rawData was null");
+			throw new NullPointerException("Given argument is null!");
 		}
 		
 		Vector<HashMap<String, String>> formattedData = new Vector<HashMap<String, String>>();
@@ -1304,7 +1320,7 @@ public class JTS3ServerQuery
 	 * @param search The search string, you can use the % character as wildcard.
 	 * @param isUID If the search string is a unique id, set <code>true</code> here. If not, set <code>false</code>.
 	 * @return A Vector containing Integer numbers with the client database id. 
-	 * @throws TS3ServerQueryException
+	 * @throws TS3ServerQueryException If the TS3 server is returning an error code/message.
 	 * @since 2.0.2
 	 * @see JTS3ServerQuery#getInfo(int, int)
 	 */
@@ -1322,7 +1338,7 @@ public class JTS3ServerQuery
 		
 		if (!hmIn.get("id").equals("0"))
 		{
-			throw new TS3ServerQueryException("searchClientDB()", hmIn.get("id"), hmIn.get("msg"), hmIn.get("extra_msg"), hmIn.get("failed_permid"));
+			throw new TS3ServerQueryException("searchClientDB("+search+", "+(isUID ? "true" : "false")+")", hmIn.get("id"), hmIn.get("msg"), hmIn.get("extra_msg"), hmIn.get("failed_permid"));
 		}
 		else if (hmIn.get("response") == null)
 		{
@@ -1347,12 +1363,45 @@ public class JTS3ServerQuery
 	}
 	
 	/**
-	 * Get Informations about a server, channel or client.<br><br>
+	 * Get the client database id of a client unique id.
+	 * @param uniqueID The client unique id.
+	 * @return The client db id as int.
+	 * @throws TS3ServerQueryException If the TS3 server is returning an error code/message.
+	 * @throws IllegalStateException If not connected to a TS3 server or invalid server response received.
+	 * @throws IllegalArgumentException If uniqueID argument is invalid or missing.
+	 * @throws NumberFormatException If the TS3 server sends an invalid client db id.
+	 * @since 2.0.3
+	 */
+	public int getClientDBIDFromUID(String uniqueID)
+	throws TS3ServerQueryException
+	{
+		if (uniqueID == null || uniqueID.length() < 20 || uniqueID.length() > 50)
+		{
+			throw new IllegalArgumentException("Missing or invalid unique ID!");
+		}
+		
+		HashMap<String, String> hmIn = doInternalCommand("clientgetdbidfromuid cluid="+uniqueID);
+		
+		if (!hmIn.get("id").equals("0"))
+		{
+			throw new TS3ServerQueryException("getClientDBIDFromUID("+uniqueID+")", hmIn.get("id"), hmIn.get("msg"), hmIn.get("extra_msg"), hmIn.get("failed_permid"));
+		}
+		else if (hmIn.get("response") == null)
+		{
+			throw new IllegalStateException("No valid server response found!");
+		}
+		
+		hmIn = parseLine(hmIn.get("response"));
+		return Integer.parseInt(hmIn.get("cldbid"));
+	}
+	
+	/**
+	 * Get information about a server, channel or client.<br><br>
 	 * <b>Notice:</b><br>
-	 * If you want server informations, the server will return informations only about the current selected virtual server. To get informations about another virtual server, just select first.
+	 * If you want server information, the server will return information only about the current selected virtual server. To get information about another virtual server, just select first.
 	 * @param infoMode An INFOMODE constant.
-	 * @param objectID A channel or client ID, use any number for server informations.
-	 * @return A HashMap with the informations as key / value pairs like in the TS3 server response.
+	 * @param objectID A channel or client ID, use any number for server information.
+	 * @return A HashMap with the information as key / value pairs like in the TS3 server response.
 	 * @throws TS3ServerQueryException If the TS3 server is returning an error code/message.
 	 * @throws IllegalStateException If not connected to a TS3 server or invalid server response received.
 	 * @throws IllegalArgumentException If infoMode argument is invalid.
@@ -1381,7 +1430,7 @@ public class JTS3ServerQuery
 		
 		if (!hmIn.get("id").equals("0"))
 		{
-			throw new TS3ServerQueryException("getInfo()", hmIn.get("id"), hmIn.get("msg"), hmIn.get("extra_msg"), hmIn.get("failed_permid"));
+			throw new TS3ServerQueryException("getInfo("+Integer.toString(infoMode)+", "+Integer.toString(objectID)+")", hmIn.get("id"), hmIn.get("msg"), hmIn.get("extra_msg"), hmIn.get("failed_permid"));
 		}
 		else if (hmIn.get("response") == null)
 		{
@@ -1394,7 +1443,7 @@ public class JTS3ServerQuery
 	}
 	
 	/**
-	 * Get informations about a permission ID.<br><br>
+	 * Get information about a permission ID.<br><br>
 	 * If the permission ID was found, the HashMap will contain the following keys:<br>
 	 * <code>permid</code> with the permission ID<br>
 	 * <code>permname</code> with the permission name<br>
@@ -1496,6 +1545,7 @@ public class JTS3ServerQuery
 	 * @see JTS3ServerQuery#LISTMODE_SERVERGROUPLIST
 	 * @see JTS3ServerQuery#LISTMODE_SERVERLIST
 	 * @see JTS3ServerQuery#LISTMODE_SERVERGROUPCLIENTLIST
+	 * @see JTS3ServerQuery#LISTMODE_SERVERGROUPSBYCLIENTID
 	 */
 	public Vector<HashMap<String, String>> getList(int listMode)
 	throws TS3ServerQueryException
@@ -1521,6 +1571,7 @@ public class JTS3ServerQuery
 	 * @see JTS3ServerQuery#LISTMODE_SERVERGROUPLIST
 	 * @see JTS3ServerQuery#LISTMODE_SERVERLIST
 	 * @see JTS3ServerQuery#LISTMODE_SERVERGROUPCLIENTLIST
+	 * @see JTS3ServerQuery#LISTMODE_SERVERGROUPSBYCLIENTID
 	 */
 	public Vector<HashMap<String, String>> getList(int listMode, String arguments)
 	throws TS3ServerQueryException
@@ -1563,7 +1614,7 @@ public class JTS3ServerQuery
 		
 		if (!hmIn.get("id").equals("0"))
 		{
-			throw new TS3ServerQueryException("getList()", hmIn.get("id"), hmIn.get("msg"), hmIn.get("extra_msg"), hmIn.get("failed_permid"));
+			throw new TS3ServerQueryException("getList("+command+")", hmIn.get("id"), hmIn.get("msg"), hmIn.get("extra_msg"), hmIn.get("failed_permid"));
 		}
 		else if (hmIn.get("response") == null)
 		{
@@ -1635,16 +1686,17 @@ public class JTS3ServerQuery
 		}
 		
 		// Creates a hash map with the parsed error id and message.
-		hmIn = parseLine(temp);
-		if (hmIn == null)
+		try
+		{
+			hmIn = parseLine(temp);
+		}
+		catch (NullPointerException npe)
 		{
 			throw new IllegalStateException("null object, maybe connection to TS3 server interrupted.");
 		}
-		else
-		{
-			// Puts the server response in the hash map.
-			hmIn.put("response", inData);
-		}
+		
+		// Puts the server response in the hash map.
+		hmIn.put("response", inData);
 		
 		eventNotifyCheckActive = true;
 		return hmIn;
@@ -1717,18 +1769,18 @@ public class JTS3ServerQuery
 	 * <b>Notice:</b><br>
 	 * Don't use this for help messages, since they are already formatted by the TS3 server!<br>
 	 * Also don't use this for lists, use getList() or parseRawData() instead!
-	 * @param rawData The unformatted single line TS3 server response
-	 * @return A HashMap for each entry with the keys given by the TS3 Server.
-	 * @throws NullPointerException If rawData is <code>null</code>
+	 * @param line The unformatted single line TS3 server response
+	 * @return A HashMap with the keys given by the TS3 Server.
+	 * @throws NullPointerException If line is <code>null</code>.
 	 * @see JTS3ServerQuery#getList(int)
 	 * @see JTS3ServerQuery#getList(int, String)
 	 * @see JTS3ServerQuery#parseRawData(String)
 	 */
 	public HashMap<String, String> parseLine(String line)
 	{
-		if (line == null || line.length() == 0)
+		if (line == null)
 		{
-			return null;
+			throw new NullPointerException("Given argument is null!");
 		}
 		
 		StringTokenizer st = new StringTokenizer(line, " ", false);
@@ -1884,6 +1936,14 @@ public class JTS3ServerQuery
 			}
 		}
 		
+		if (listMode == LISTMODE_SERVERGROUPSBYCLIENTID)
+		{
+			if (argument.startsWith("cldbid=") && (argument.indexOf(" ") == -1))
+			{
+				return true;
+			}
+		}
+		
 		return false;
 	}
 	
@@ -1926,6 +1986,10 @@ public class JTS3ServerQuery
 			else if (mode == LISTMODE_SERVERGROUPCLIENTLIST)
 			{
 				return "servergroupclientlist";
+			}
+			else if (mode == LISTMODE_SERVERGROUPSBYCLIENTID)
+			{
+				return "servergroupsbyclientid";
 			}
 		}
 		else if (listType == 2)

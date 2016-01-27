@@ -18,6 +18,7 @@ import de.stefan1200.jts3serverquery.TS3ServerQueryException;
 public class ModTools implements ModEvent, TS3Event {
 	private Instance<?> instance;
 	private Logger logger = LogManager.getLogger();
+	private String CMD_HELP = "TS3Manager - ToolsMod\n!tools rocket [client_id] [ignore]\nuse [ignore] to rocket through used channels.";
 	
 	public ModTools(Instance<?> instance){
 		this.instance = instance;
@@ -29,10 +30,9 @@ public class ModTools implements ModEvent, TS3Event {
 	 * @param ap
 	 * @return
 	 */
-	private void rocketchan(String target, int ap) {
+	private void rocketchan(String target, int applicant, boolean ignore_clients) {
 		TS3Connector<?> ts3conn = instance.getTS3Connection();
 		try {
-			
 			int tid = Integer.parseInt(target); // get targetid
 			HashMap<String, String> tmap = ts3conn.getConnector().getInfo(JTS3ServerQuery.INFOMODE_CLIENTINFO, tid); // target infos
 			if ( tmap.get("client_database_id") == null ) {
@@ -43,24 +43,26 @@ public class ModTools implements ModEvent, TS3Event {
 			List<Integer> channels = new ArrayList<Integer>();
 			Vector<HashMap<String, String>> a = ts3conn.getConnector().getList(JTS3ServerQuery.LISTMODE_CHANNELLIST);
 			for ( HashMap<String, String> b : a ) {
-				channels.add(Integer.valueOf(b.get("cid")));
+				if ( b.get("total_clients").equals("0") || ignore_clients ) {
+					channels.add(Integer.valueOf(b.get("cid")));
+				}
 			}
 			int i = channels.size() - 1;
 			while (i >= 0) {
 				ts3conn.getConnector().moveClient(tid, channels.get(i), "");
 				i--;
 				try {
-					Thread.sleep(60);
+					Thread.sleep(40);
 				} catch ( InterruptedException e ) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
 			}
 			ts3conn.getConnector().kickClient(tid, false, "You where rocketed!");
-			ts3conn.getConnector().sendTextMessage(ap, JTS3ServerQuery.TEXTMESSAGE_TARGET_CLIENT, "[b]Client " + tmap.get("client_nickname")+ "[" + tmap.get("client_database_id") + "] wurde rocketed![/b]");
+			ts3conn.getConnector().sendTextMessage(applicant, JTS3ServerQuery.TEXTMESSAGE_TARGET_CLIENT, "[b]Client " + tmap.get("client_nickname")+ "[" + tmap.get("client_database_id") + "] wurde rocketed![/b]");
 		} catch ( NumberFormatException e ) {
 			try {
-				ts3conn.getConnector().sendTextMessage(ap, JTS3ServerQuery.TEXTMESSAGE_TARGET_CLIENT, "[b]Client " + target + " nicht gefunden![/b]");
+				ts3conn.getConnector().sendTextMessage(applicant, JTS3ServerQuery.TEXTMESSAGE_TARGET_CLIENT, "[b]Client " + target + " nicht gefunden![/b]");
 			} catch (TS3ServerQueryException e1) {
 				logger.fatal(e1);
 			}
@@ -73,23 +75,36 @@ public class ModTools implements ModEvent, TS3Event {
 	public void handleTextMessage(String eventType, HashMap<String, String> eventInfo) {
 		String[] args = eventInfo.get("msg").split(" ");
 		int sID = Integer.parseInt(eventInfo.get("invokerid"));
-		if(args[0].equals("!tools")){
-			boolean misCMD = false;
-			switch(args[1]){
-			case "rocket":
-				if(args.length == 3)
-					rocketchan(args[2], sID);
-				else
+		try {
+		if ( instance.hasGroup(sID, instance.ADMIN_GROUP, instance.getTS3Connection().getConnector()) ) {
+			if(args[0].equals("!tools")){
+				boolean misCMD = false;
+				switch(args[1]){
+				case "rocket":
+					if(args.length >= 3) {
+						boolean ignore_users = false;
+						if (args.length == 4)
+								ignore_users = args[3].equals("ignore");
+						rocketchan(args[2], sID, ignore_users);
+					}else{
+						misCMD = true;
+					}
+					break;
+				case "help":
+				default:
 					misCMD = true;
-				break;
-			case "help":
-				//TODO: send help
-			default:
-				logger.warn("unknown cmd");
+					logger.warn("unknown cmd");
+				}
+				if(misCMD){
+					instance.getTS3Connection().getConnector().sendTextMessage(sID, JTS3ServerQuery.TEXTMESSAGE_TARGET_CLIENT, CMD_HELP);
+				}
 			}
-			if(misCMD){
-				//TODO: send help
-			}
+		} else {
+			logger.info("User has not enough perms.");
+			instance.getTS3Connection().getConnector().sendTextMessage(sID, JTS3ServerQuery.TEXTMESSAGE_TARGET_CLIENT, "Not enough permissions!");
+		}
+		} catch (TS3ServerQueryException e){
+			logger.error("Error on cmd handling: \n",e);
 		}
 	}
 	

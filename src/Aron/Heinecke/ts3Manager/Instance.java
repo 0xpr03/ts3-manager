@@ -2,6 +2,7 @@ package Aron.Heinecke.ts3Manager;
 
 import java.lang.reflect.InvocationTargetException;
 import java.util.HashMap;
+import java.util.StringTokenizer;
 import java.util.Vector;
 
 import org.apache.logging.log4j.LogManager;
@@ -10,6 +11,7 @@ import org.apache.logging.log4j.Logger;
 import Aron.Heinecke.ts3Manager.Lib.TS3Connector;
 import Aron.Heinecke.ts3Manager.Lib.API.ModEvent;
 import Aron.Heinecke.ts3Manager.Lib.API.TS3Event;
+import de.stefan1200.jts3serverquery.JTS3ServerQuery;
 import de.stefan1200.jts3serverquery.TS3ServerQueryException;
 import de.stefan1200.jts3serverquery.TeamspeakActionListener;
 
@@ -24,6 +26,7 @@ public class Instance<E extends ModEvent & TS3Event> implements TeamspeakActionL
 	private boolean retry;
 	private String BOT_NAME;
 	private int CHANNEL;
+	public int ADMIN_GROUP;
 	private HashMap<String, Boolean> enabled_features;
 	private Vector<E> mods = new Vector<E>();
 	private Vector<E> event_joined = new Vector<E>();
@@ -40,11 +43,12 @@ public class Instance<E extends ModEvent & TS3Event> implements TeamspeakActionL
 	 * @param CHANNEL
 	 * @param features
 	 */
-	public Instance(final int SID, String BOT_NAME, int CHANNEL, HashMap<String, Boolean> features){
+	public Instance(final int SID, String BOT_NAME, int CHANNEL, HashMap<String, Boolean> features, int admin_group){
 		this.SID = SID;
 		this.BOT_NAME = BOT_NAME;
 		this.CHANNEL = CHANNEL;
 		this.enabled_features = features;
+		this.ADMIN_GROUP = admin_group;
 		retry = Config.getBoolValue("CONNECTIONS_RETRY");
 		Thread t = new Thread(){
 			public void run(){
@@ -180,6 +184,31 @@ public class Instance<E extends ModEvent & TS3Event> implements TeamspeakActionL
 		}
 		
 		//logger.debug("EVENT TYPE {} Instance: {}\n{}",eventType,SID,eventInfo);
+	}
+	
+	/**
+	 * Test if client has group
+	 * @param cid client id
+	 * @param group_id group id
+	 * @param query query to use for request
+	 * @return true if client has group
+	 * @throws TS3ServerQueryException 
+	 */
+	public boolean hasGroup(int cid, int group_id,JTS3ServerQuery query ) throws TS3ServerQueryException {
+		return isGroupListed(query.getInfo(13, cid).get("client_servergroups"),group_id);
+	}
+	
+	private boolean isGroupListed(String groupIDs, int searchGroupID) {
+		StringTokenizer groupTokenizer = new StringTokenizer(groupIDs, ",", false);
+		int groupID;
+
+		while (groupTokenizer.hasMoreTokens()) {
+			groupID = Integer.parseInt(groupTokenizer.nextToken());
+			if ( groupID == searchGroupID ) {
+				return true;
+			}
+		}
+		return false;
 	}
 	
 	public int getSID() {

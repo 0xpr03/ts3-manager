@@ -178,10 +178,11 @@ public class TS3Connector<U extends TeamspeakActionListener> {
 	private void checkConnect() {
 		try {
 			if ( query.isConnected() ) {
+				// virtual server running: virtualserver_status=online
 				if((query.doCommand("serverinfo").get("response").contains("virtualserver_status=online")))
 						return;
 			}
-			logger.warn("disconnect on SID {}!",sID);
+			logger.warn("Disconnect on SID {}! Reconnecting..",sID);
 			try {
 				query.closeTS3Connection();
 				connect();

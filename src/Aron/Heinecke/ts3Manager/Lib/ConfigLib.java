@@ -33,7 +33,7 @@ public class ConfigLib {
 	private File FILE = new File(System.getProperty("user.dir")+"/"+CONFIG_FILE);
 	
 	/**
-	 * TestMockup only for file sheme testing
+	 * TestMockup only for file scheme testing
 	 * @throws IOException
 	 */
 	public void writeTestMockup() throws IOException{
@@ -73,7 +73,7 @@ public class ConfigLib {
 		FileReader reader = new FileReader(FILE);
 		config = (HashMap<String, Object>) yaml.load(reader);
 		reader.close();
-		
+		logger.trace("reading values..");
 		Config.setValue("MYSQL_PORT", config.get("MYSQL_PORT"));
 		Config.setValue("MYSQL_USER", config.get("MYSQL_USER"));
 		Config.setValue("MYSQL_PASSWORD", config.get("MYSQL_PASSWORD"));
@@ -111,7 +111,8 @@ public class ConfigLib {
 					String name = (String) config.get(i+".instance_ts3_name");
 					int channel = (int) config.get(i+".instance_ts3_channel");
 					HashMap<String,Boolean> features = (HashMap<String, Boolean>) config.get(i+".instance_features");
-					list.add(new Instance(ts3_id,name,channel,features));
+					int admin_group = (int) config.get(i+".instance_admin_group");
+					list.add(new Instance(ts3_id,name,channel,features,admin_group));
 					loaded++;
 				}else{
 					logger.info("Instance no. {} disabled, skipping..",i);

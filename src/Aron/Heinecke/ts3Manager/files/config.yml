@@ -14,6 +14,8 @@ CONNECTIONS_RETRY: true
 1.instance_ts3_name: bot
 1.instance_ts3_ID: 123
 1.instance_ts3_channel: 123
-1.instance_features: {
+1.instance_admin_group: 0
+1.instance_features: 
   ModStats : true
-  }
+  ModTools : false
+

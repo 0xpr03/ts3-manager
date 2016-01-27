@@ -1,6 +1,5 @@
 package Aron.Heinecke.ts3Manager;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -16,7 +15,7 @@ import Aron.Heinecke.ts3Manager.Lib.ConfigLib;
  */
 public class TS3Manager {
 	private static Logger logger = LogManager.getLogger();
-	private static String VERSION = "0.2.2 beta";
+	private static String VERSION = "0.2.3 beta";
 	@SuppressWarnings("rawtypes")
 	private static List<Instance> instances = new ArrayList<Instance>();
 	
@@ -43,7 +42,7 @@ public class TS3Manager {
 				logger.error("config syntax error at \n{}",((ScannerException) e).getProblemMark().get_snippet());
 			else
 				logger.error("Error parsing the config!",e);
-		} catch (IOException e) {
+		} catch (Exception e) {
 			logger.error("Failure loading the config file! {}",e);
 			cfglib.writeDefaults();
 			logger.info("Wrote default config.");
