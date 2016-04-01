@@ -50,6 +50,7 @@ public class ModStats implements ModEvent, TS3Event {
 	private String tableName;
 	private MYSQLConnector conn = null;
 	private SBuffer<DataElem> sBuffer = new SBuffer<DataElem>(2);
+	private final int SCHEDULE_TIME = 15*60*1000; // 15 minutes
 
 	public ModStats(Instance<?> instance) {
 		this.instance = instance;
@@ -101,6 +102,7 @@ public class ModStats implements ModEvent, TS3Event {
 		}catch(SQLException | java.util.ConcurrentModificationException e){
 			sBuffer.add(data);
 			logger.error("Error flusing Buffer of SID {} \n{}",instance.getSID(),e);
+			logger.info("Delayed insertion of {} elements.",data.size());
 		}
 	}
 
@@ -112,7 +114,7 @@ public class ModStats implements ModEvent, TS3Event {
 		if (System.currentTimeMillis() - last_update >= 1000) {
 			last_update = System.currentTimeMillis();
 			addUpdate();
-		} else {
+		} else { // too short timespan, we'll create a datapoint later
 			logger.debug("Scheduling later");
 			timer = new Timer(false);
 			timer.schedule(timerdosnapshot, 1000);
@@ -180,6 +182,9 @@ public class ModStats implements ModEvent, TS3Event {
 		return false;
 	}
 
+	/**
+	 * Create table for server if not existing
+	 */
 	@Override
 	public void handleReady() {
 		try {
@@ -195,7 +200,7 @@ public class ModStats implements ModEvent, TS3Event {
 		updateClients();
 		insertBuffer();
 		bufferTimer = new Timer(true);
-		bufferTimer.schedule(taskBuffer, 15*60*1000,15*60*1000); // 15 min
+		bufferTimer.schedule(taskBuffer, SCHEDULE_TIME,SCHEDULE_TIME);
 	}
 
 	@Override
@@ -206,6 +211,9 @@ public class ModStats implements ModEvent, TS3Event {
 	public void handleTextMessage(String eventType, HashMap<String, String> eventInfo) {
 	}
 
+	/**
+	 * Shutdown, insert last data
+	 */
 	@Override
 	public void handleShutdown() {
 		logger.entry();
