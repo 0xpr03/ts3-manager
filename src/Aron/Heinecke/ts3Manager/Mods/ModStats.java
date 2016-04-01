@@ -16,8 +16,10 @@ import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.Vector;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -70,29 +72,35 @@ public class ModStats implements ModEvent, TS3Event {
 	
 	/**
 	 * Flushes the current buffer into the DB
+	 * Error hardened, will save failed elements for the next run
 	 */
 	private void insertBuffer(){
+		long time = System.currentTimeMillis();
+		sBuffer.swap();
+		int size = sBuffer.getLastChannelSize();
+		if(size == 0)
+			return;
+		Vector<DataElem> data = sBuffer.getLastChannel();
+		sBuffer.clearOldChannel();
 		try{
-			long time = System.currentTimeMillis();
-			sBuffer.swap();
-			int size = sBuffer.getLastChannelSize();
-			if(size == 0)
-				return;
 			conn = new MYSQLConnector();
 			stm = conn.prepareStm(sql);
-			for(DataElem de : sBuffer.getLastChannel()){
+			// use the iterator directly, to remove the element if it's been used
+			// by this we're able to save all left data on a sql failure
+			for(Iterator<DataElem> iterator = data.iterator(); iterator.hasNext(); ){
+				DataElem de = iterator.next();
 				stm.setTimestamp(1, de.getTimestamp());
 				stm.setInt(2, de.getClients());
 				stm.setInt(3, de.getQueryclients());
 				stm.executeUpdate();
+				iterator.remove();
 			}
-			sBuffer.clearOldChannel();
 			stm.close();
 			conn.disconnect();
 			logger.debug("Buffer for {} flushed in {} MS, {} entrys",instance.getSID(),System.currentTimeMillis() - time,size);
 		}catch(SQLException | java.util.ConcurrentModificationException e){
-			logger.error("Error flusing Buffer of SID {}",instance.getSID());
-			logger.error(e);
+			sBuffer.add(data);
+			logger.error("Error flusing Buffer of SID {} \n{}",instance.getSID(),e);
 		}
 	}
 

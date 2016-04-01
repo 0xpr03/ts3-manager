@@ -42,7 +42,7 @@ public class SBuffer<U> {
 	}
 	
 	/**
-	 * Return copy of channel
+	 * Returns a copy of the specified channel
 	 * @param channel
 	 * @return
 	 */
@@ -58,6 +58,14 @@ public class SBuffer<U> {
 			channel = 0;
 		else
 			channel++;
+	}
+	
+	/**
+	 * Add multiple elements (synchronized through definition of Vector)
+	 * @param data
+	 */
+	public void add(Vector<U> data){
+		buffer.get(channel).addAll(data);
 	}
 	
 	/**
@@ -85,7 +93,7 @@ public class SBuffer<U> {
 	}
 	
 	/**
-	 * Return a deep-copy of the channel in use before last swap call
+	 * Return a copy of the channel in use before last swap call
 	 * @return
 	 */
 	public Vector<U> getLastChannel(){
