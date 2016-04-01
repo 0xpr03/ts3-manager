@@ -32,7 +32,16 @@ public class MYSQLConnector {
 	private Logger logger = LogManager.getLogger();
 	private Connection connection;
 	
+	private final int MS_CONNECTION_CHECK_TIMEOUT = 20;
+	
 	public MYSQLConnector(){
+		connect();
+	}
+	
+	/**
+	 * Connector function
+	 */
+	private void connect(){
 		String base = "jdbc:mariadb://";
 		
 		base = base+Config.getStrValue("MYSQL_IP")+":"+Config.getIntValue("MYSQL_PORT");
@@ -71,11 +80,37 @@ public class MYSQLConnector {
 	 * @param sql
 	 * @return PreparedStatment, unbound
 	 * @throws SQLException to be handled with DBExceptionConverter at best
+	 * @throws ConnectionException if the connection is dead and wasn't able to recover
 	 * @author "Aron Heinecke"
 	 */
 	public PreparedStatement prepareStm(String sql) throws SQLException{
-		PreparedStatement stm = connection.prepareStatement(sql);
-		return stm;
+		if(checkConnection())
+			return connection.prepareStatement(sql);
+		else
+			throw new ConnectionException();
+	}
+	
+	/**
+	 * Check if the connection is alive
+	 * Retry to connect otherwise
+	 * @return false if the connection couldn't be re-established
+	 */
+	private boolean checkConnection(){
+		try{
+			if(connection.isValid(MS_CONNECTION_CHECK_TIMEOUT)){
+				return true;
+			}else{
+				logger.warn("DB connection broken!");
+				try{
+					connection.close();
+				}catch(Exception e){}
+				connect();
+				return connection.isValid(MS_CONNECTION_CHECK_TIMEOUT);
+			}
+		}catch(Exception e){
+			logger.error("db connection check {}",e);
+			return false;
+		}
 	}
 	
 	/**
@@ -87,6 +122,9 @@ public class MYSQLConnector {
 	 * @author "Aron Heinecke"
 	 */
 	public int execUpdateQuery(String sql) throws SQLException{
+		if(!checkConnection()){
+			throw new ConnectionException();
+		}
 		int affectedLines = -1;
 		Statement stm = null;
 		try{
@@ -105,8 +143,19 @@ public class MYSQLConnector {
 	/**
 	 * get the actual connection
 	 * @return Connection
+	 * @throws ConnectionException if the connection couldn't be re-established
 	 */
-	public Connection getConnector(){
-		return connection;
+	public Connection getConnector() throws ConnectionException{
+		if(checkConnection())
+			return connection;
+		else
+			throw new ConnectionException();
+	}
+	
+	public class ConnectionException extends SQLException{
+		private static final long serialVersionUID = 7303912993162712101L;
+		public ConnectionException(){
+			super("Connection dead exception");
+		}
 	}
 }
