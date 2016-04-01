@@ -1,3 +1,15 @@
+/**************************************************************************
+ * Modular bot for teamspeak 3 (c)
+ * Copyright (C) 2015 Aron Heinecke
+ * 
+ * 
+ * 
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the
+ * License.
+ * See main class TS3Manager.java for the full version.
+ *************************************************************************/
 package Aron.Heinecke.ts3Manager.Mods;
 
 import java.util.ArrayList;
@@ -58,7 +70,7 @@ public class ModTools implements ModEvent, TS3Event {
 					e.printStackTrace();
 				}
 			}
-			ts3conn.getConnector().kickClient(tid, false, "You where rocketed!");
+			ts3conn.getConnector().kickClient(tid, false, "You were rocketed!");
 			ts3conn.getConnector().sendTextMessage(applicant, JTS3ServerQuery.TEXTMESSAGE_TARGET_CLIENT, "[b]Client " + tmap.get("client_nickname")+ "[" + tmap.get("client_database_id") + "] wurde rocketed![/b]");
 		} catch ( NumberFormatException e ) {
 			try {

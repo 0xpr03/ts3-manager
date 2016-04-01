@@ -1,6 +1,15 @@
-/*******************************************************************************
- * Copyright (c) 2015 by Aron Heinecke
- *******************************************************************************/
+/**************************************************************************
+ * Modular bot for teamspeak 3 (c)
+ * Copyright (C) 2015 Aron Heinecke
+ * 
+ * 
+ * 
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the
+ * License.
+ * See main class TS3Manager.java for the full version.
+ *************************************************************************/
 package Aron.Heinecke.ts3Manager;
 
 import java.util.HashMap;
