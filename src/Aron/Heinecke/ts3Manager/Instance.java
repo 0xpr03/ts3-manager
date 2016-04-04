@@ -66,7 +66,7 @@ public class Instance<E extends ModEvent & TS3Event> implements TeamspeakActionL
 			public void run(){
 				boolean connected = false;
 				do {
-					ts3connector = getTS3Connector(getInstance());
+					ts3connector = getNewTS3Connector(getInstance());
 					connected = ts3connector != null;
 				} while(!connected && retry);
 				if(connected)
@@ -92,16 +92,28 @@ public class Instance<E extends ModEvent & TS3Event> implements TeamspeakActionL
 	}
 	
 	/**
-	 * Create new connector
+	 * Returns a new ts3 connection
+	 * @param i action receiver class
+	 * @param bot_name
+	 * @param channel_id
 	 * @return null on failure
 	 */
-	private <U extends TeamspeakActionListener> TS3Connector<U> getTS3Connector(U i){
+	public <U extends TeamspeakActionListener> TS3Connector<U> getNewTS3Connector(U i, String bot_name, int channel_id){
 		try {
-			return new TS3Connector<U>(i, SID, Config.getStrValue("TS3_IP"), Config.getIntValue("TS3_PORT"), Config.getStrValue("TS3_USER"), Config.getStrValue("TS3_PASSWORD"),BOT_NAME,CHANNEL);
+			return new TS3Connector<U>(i, SID, Config.getStrValue("TS3_IP"), Config.getIntValue("TS3_PORT"), Config.getStrValue("TS3_USER"), Config.getStrValue("TS3_PASSWORD"),bot_name, channel_id);
 		} catch (TS3ServerQueryException e) {
 			logger.warn("{} for SID {}",e, SID);
 			return null;
 		}
+	}
+	
+	/**
+	 * Returns a new ts3 connection with config name & channel settings
+	 * @param i
+	 * @return null on failure
+	 */
+	private <U extends TeamspeakActionListener> TS3Connector<U> getNewTS3Connector(U i){
+		return getNewTS3Connector(i,BOT_NAME,CHANNEL );
 	}
 	
 	/**
@@ -231,6 +243,12 @@ public class Instance<E extends ModEvent & TS3Event> implements TeamspeakActionL
 		return BOT_NAME;
 	}
 	
+	/**
+	 * Returns the ts3connection of this instance<br>
+	 * Do not use this connection for heavy tasks as it's interrupting the event loop<br>
+	 * Please use <code>getNewTS3Connector</code> instead for those jobs
+	 * @return
+	 */
 	public TS3Connector<?> getTS3Connection(){
 		return ts3connector;
 	}
