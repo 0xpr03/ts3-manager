@@ -66,8 +66,7 @@ public class ModTools implements ModEvent, TS3Event {
 				try {
 					Thread.sleep(40);
 				} catch ( InterruptedException e ) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
+					logger.warn(e);
 				}
 			}
 			ts3conn.getConnector().kickClient(tid, false, "You were rocketed!");
@@ -80,6 +79,9 @@ public class ModTools implements ModEvent, TS3Event {
 			}
 		} catch (TS3ServerQueryException e) {
 			logger.error("Error on rocket \n{}",e);
+		}finally{
+			if(ts3conn != null)
+				ts3conn.disconnect();
 		}
 	}
 
@@ -88,8 +90,8 @@ public class ModTools implements ModEvent, TS3Event {
 		String[] args = eventInfo.get("msg").split(" ");
 		int sID = Integer.parseInt(eventInfo.get("invokerid"));
 		try {
-		if ( instance.hasGroup(sID, instance.ADMIN_GROUP, instance.getTS3Connection().getConnector()) ) {
-			if(args[0].equals("!tools")){
+		if(args[0].equals("!tools")){
+			if ( hasAdminPerms(sID) ) {
 				boolean misCMD = false;
 				switch(args[1]){
 				case "rocket":
@@ -110,14 +112,17 @@ public class ModTools implements ModEvent, TS3Event {
 				if(misCMD){
 					instance.getTS3Connection().getConnector().sendTextMessage(sID, JTS3ServerQuery.TEXTMESSAGE_TARGET_CLIENT, CMD_HELP);
 				}
+			} else {
+				instance.getTS3Connection().getConnector().sendTextMessage(sID, JTS3ServerQuery.TEXTMESSAGE_TARGET_CLIENT, PERM_MSG);
 			}
-		} else {
-			logger.info("User has not enough perms.");
-			instance.getTS3Connection().getConnector().sendTextMessage(sID, JTS3ServerQuery.TEXTMESSAGE_TARGET_CLIENT, "Not enough permissions!");
 		}
 		} catch (TS3ServerQueryException e){
 			logger.error("Error on cmd handling: \n",e);
 		}
+	}
+	
+	private boolean hasAdminPerms(int clientID) throws TS3ServerQueryException{
+		return instance.hasGroup(clientID, instance.ADMIN_GROUP, instance.getTS3Connection().getConnector());
 	}
 	
 	@Override
