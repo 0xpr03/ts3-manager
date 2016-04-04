@@ -28,7 +28,7 @@ import de.stefan1200.jts3serverquery.TS3ServerQueryException;
 import de.stefan1200.jts3serverquery.TeamspeakActionListener;
 
 /**
- * Instance represents one server
+ * Bot Instance, represents one server
  * @author Aron Heinecke
  * @param <E>
  */

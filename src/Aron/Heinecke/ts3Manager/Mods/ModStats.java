@@ -160,11 +160,7 @@ public class ModStats implements Mod {
 	@Override
 	public ModRegisters registerEvents(){
 		return new ModRegisters.Builder()
-				.eventChannel(false)
 				.eventServer(true)
-				.eventTextChannel(false)
-				.eventTextPrivate(false)
-				.eventTextServer(false)
 				.build();
 	}
 

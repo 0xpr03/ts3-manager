@@ -16,9 +16,8 @@ import java.util.HashMap;
 
 /**
  * Config holder for all instances
- * Local variables for the session inclusive
+ * Local variables per session inclusive
  * @author "Aron Heinecke"
- *
  */
 public final class Config {
 	private static HashMap<String,Object> SETTINGS = new HashMap<String,Object>();

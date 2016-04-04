@@ -15,18 +15,18 @@ package Aron.Heinecke.ts3Manager.Lib.API;
 import java.util.HashMap;
 
 /**
- * Event registering interface for mods<br>
- * Return true for events that are required
+ * Required interface for all mods
  * @author Aron Heinecke
  */
 public interface Mod {
 	/**
-	 * Called on initialization, registers for events
+	 * Called on initialization, registers for events<br>
+	 * Should not block
 	 * @return
 	 */
 	public abstract ModRegisters registerEvents();
 	/**
-	 * Called when all required things are ready
+	 * Called after initialization
 	 */
 	public abstract void handleReady();
 	/**

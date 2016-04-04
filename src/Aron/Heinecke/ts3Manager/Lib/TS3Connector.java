@@ -23,7 +23,8 @@ import de.stefan1200.jts3serverquery.TS3ServerQueryException;
 import de.stefan1200.jts3serverquery.TeamspeakActionListener;
 
 /**
- * TS3Connector containing also the actionlistener
+ * TS3Connector<br>
+ * Handles connection timeouts and errors.
  * @author Aron Heinecke
  * @param <U>
  */

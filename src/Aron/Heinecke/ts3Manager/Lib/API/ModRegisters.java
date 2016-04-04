@@ -1,9 +1,8 @@
 package Aron.Heinecke.ts3Manager.Lib.API;
 
 /**
- * BuilderPattern for mod event settings
+ * BuilderPattern for mod event settings<br>
  * @author Aron Heinecke
- *
  */
 public class ModRegisters {
 	private boolean eventChannel;
@@ -11,7 +10,12 @@ public class ModRegisters {
 	private boolean eventTextChannel;
 	private boolean eventTextPrivate;
 	private boolean eventTextServer;
-
+	
+	/**
+	 * Builder for ModRegisters, default setting for all events is off.
+	 * @author Aron Heinecke
+	 *
+	 */
 	public static class Builder {
 		private boolean eventChannel = false;
 		private boolean eventServer = false;

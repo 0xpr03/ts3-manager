@@ -25,7 +25,8 @@ import org.apache.logging.log4j.Logger;
 import Aron.Heinecke.ts3Manager.Config;
 
 /**
- * MariaDB/MYSQL Connector holding the connection, acting as pool
+ * MariaDB/MYSQL Connector pool<br>
+ * Reconnects if necessary.
  * @author Aron Heinecke
  */
 public class MYSQLConnector {

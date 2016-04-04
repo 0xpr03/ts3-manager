@@ -16,6 +16,10 @@ import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+/**
+ * Simple tester for SBuffer
+ * @author Aron Heinecke
+ */
 public class bufferTest {
 	private static Buffer<Integer> buffer;
 	private boolean insertRunning = false;

@@ -142,11 +142,8 @@ public class ModTools implements Mod {
 	@Override
 	public ModRegisters registerEvents(){
 		return new ModRegisters.Builder()
-				.eventChannel(false)
-				.eventServer(false)
 				.eventTextChannel(true)
 				.eventTextPrivate(true)
-				.eventTextServer(false)
 				.build();
 	}
 
