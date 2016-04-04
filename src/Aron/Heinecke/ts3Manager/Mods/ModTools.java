@@ -22,15 +22,17 @@ import org.apache.logging.log4j.Logger;
 
 import Aron.Heinecke.ts3Manager.Instance;
 import Aron.Heinecke.ts3Manager.Lib.TS3Connector;
-import Aron.Heinecke.ts3Manager.Lib.API.ModEvent;
-import Aron.Heinecke.ts3Manager.Lib.API.TS3Event;
+import Aron.Heinecke.ts3Manager.Lib.API.Mod;
+import Aron.Heinecke.ts3Manager.Lib.API.ModRegisters;
 import de.stefan1200.jts3serverquery.JTS3ServerQuery;
 import de.stefan1200.jts3serverquery.TS3ServerQueryException;
 
-public class ModTools implements ModEvent, TS3Event {
+public class ModTools implements Mod {
 	private Instance<?> instance;
 	private Logger logger = LogManager.getLogger();
 	private String CMD_HELP = "TS3Manager - ToolsMod\n!tools rocket [client_id] [ignore]\nuse [ignore] to rocket through used channels.";
+	
+	private final String PERM_MSG = "Not enough permissions to perform this action !";
 	
 	public ModTools(Instance<?> instance){
 		this.instance = instance;
@@ -38,12 +40,12 @@ public class ModTools implements ModEvent, TS3Event {
 	
 	/**
 	 * User rocket function, moving a client through all available channels upwards
-	 * @param args
-	 * @param ap
-	 * @return
+	 * @param target target session ID
+	 * @param applicant applicant session ID
+	 * @param ignore_clients set to true to move also through channels with clients
 	 */
 	private void rocketchan(String target, int applicant, boolean ignore_clients) {
-		TS3Connector<?> ts3conn = instance.getTS3Connection();
+		TS3Connector<?> ts3conn = instance.getNewTS3Connector(null,"Rocket",-1);
 		try {
 			int tid = Integer.parseInt(target); // get targetid
 			HashMap<String, String> tmap = ts3conn.getConnector().getInfo(JTS3ServerQuery.INFOMODE_CLIENTINFO, tid); // target infos
@@ -138,28 +140,14 @@ public class ModTools implements ModEvent, TS3Event {
 	}
 
 	@Override
-	public boolean needs_Event_Channel() {
-		return false;
-	}
-
-	@Override
-	public boolean needs_Event_Server() {
-		return false;
-	}
-
-	@Override
-	public boolean needs_Event_TextChannel() {
-		return true;
-	}
-
-	@Override
-	public boolean needs_Event_TextPrivate() {
-		return true;
-	}
-
-	@Override
-	public boolean needs_Event_TextServer() {
-		return false;
+	public ModRegisters registerEvents(){
+		return new ModRegisters.Builder()
+				.eventChannel(false)
+				.eventServer(false)
+				.eventTextChannel(true)
+				.eventTextPrivate(true)
+				.eventTextServer(false)
+				.build();
 	}
 
 	@Override

@@ -12,23 +12,29 @@
  *************************************************************************/
 package Aron.Heinecke.ts3Manager.Lib.API;
 
+import java.util.HashMap;
+
 /**
  * Event registering interface for mods<br>
  * Return true for events that are required
  * @author Aron Heinecke
  */
-public interface ModEvent {
-	public abstract boolean needs_Event_Channel();
-	public abstract boolean needs_Event_Server();
-	public abstract boolean needs_Event_TextChannel();
-	public abstract boolean needs_Event_TextPrivate();
-	public abstract boolean needs_Event_TextServer();
+public interface Mod {
+	/**
+	 * Called on initialization, registers for events
+	 * @return
+	 */
+	public abstract ModRegisters registerEvents();
 	/**
 	 * Called when all required things are ready
 	 */
 	public abstract void handleReady();
 	/**
-	 * Caled on shutdown
+	 * Called on shutdown
 	 */
 	public abstract void handleShutdown();
+	public abstract void handleClientJoined(HashMap<String, String> eventInfo);
+	public abstract void handleClientLeft(HashMap<String, String> eventInfo);
+	public abstract void handleTextMessage(String eventType, HashMap<String, String> eventInfo);
+	public abstract void handleClientMoved(HashMap<String, String> eventInfo);
 }

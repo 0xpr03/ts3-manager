@@ -21,8 +21,8 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import Aron.Heinecke.ts3Manager.Lib.TS3Connector;
-import Aron.Heinecke.ts3Manager.Lib.API.ModEvent;
-import Aron.Heinecke.ts3Manager.Lib.API.TS3Event;
+import Aron.Heinecke.ts3Manager.Lib.API.Mod;
+import Aron.Heinecke.ts3Manager.Lib.API.ModRegisters;
 import de.stefan1200.jts3serverquery.JTS3ServerQuery;
 import de.stefan1200.jts3serverquery.TS3ServerQueryException;
 import de.stefan1200.jts3serverquery.TeamspeakActionListener;
@@ -32,7 +32,7 @@ import de.stefan1200.jts3serverquery.TeamspeakActionListener;
  * @author Aron Heinecke
  * @param <E>
  */
-public class Instance<E extends ModEvent & TS3Event> implements TeamspeakActionListener {
+public class Instance<E extends Mod> implements TeamspeakActionListener {
 	private Logger logger = LogManager.getLogger();
 	private int SID;
 	private boolean retry;
@@ -131,31 +131,32 @@ public class Instance<E extends ModEvent & TS3Event> implements TeamspeakActionL
 		for(String fnName : enabled_features.keySet()){
 			if(enabled_features.get(fnName)){
 				try {
-					Class<?> newFunction = Class.forName("Aron.Heinecke.ts3Manager.Mods." + fnName);
-					if(ModEvent.class.isAssignableFrom(newFunction) && TS3Event.class.isAssignableFrom(newFunction)){
+					Class<?> newMod = Class.forName("Aron.Heinecke.ts3Manager.Mods." + fnName);
+					if(Mod.class.isAssignableFrom(newMod)){
 						@SuppressWarnings("unchecked")
-						E obj = (E) newFunction.getDeclaredConstructor(Instance.class).newInstance(this);
-						if(obj == null){
+						E mod = (E) newMod.getDeclaredConstructor(Instance.class).newInstance(this);
+						if(mod == null){
 							logger.fatal("object ist null!");
 						}
-						mods.add(obj);
-						if(obj.needs_Event_Server() || obj.needs_Event_Channel()){
-							event_joined.add(obj);
-							event_left.add(obj);
+						mods.add(mod);
+						ModRegisters modSettings = mod.registerEvents();
+						if(modSettings.isEventServer() || modSettings.isEventChannel()){
+							event_joined.add(mod);
+							event_left.add(mod);
 						}
 						
-						if(obj.needs_Event_TextChannel() || obj.needs_Event_TextPrivate() || obj.needs_Event_TextServer())
-							event_chat.add(obj);
+						if(modSettings.isEventTextChannel() || modSettings.isEventTextPrivate() || modSettings.isEventTextServer())
+							event_chat.add(mod);
 						
-						if(obj.needs_Event_TextChannel())
+						if(modSettings.isEventTextChannel())
 							textChannel = true;
-						if(obj.needs_Event_TextPrivate())
+						if(modSettings.isEventTextPrivate())
 							textPrivate = true;
-						if(obj.needs_Event_TextServer())
+						if(modSettings.isEventTextServer())
 							textServer = true;
-						if(obj.needs_Event_Server())
+						if(modSettings.isEventServer())
 							serverEvent = true;
-						if(obj.needs_Event_Channel())
+						if(modSettings.isEventChannel())
 							channelEvent = true;
 						logger.info("Instance {} loaded {}",SID,fnName);
 					}else{
@@ -178,7 +179,7 @@ public class Instance<E extends ModEvent & TS3Event> implements TeamspeakActionL
 	public void teamspeakActionPerformed(String eventType, HashMap<String, String> eventInfo) {
 		if (eventType.equals("notifytextmessage")) {
 			if ( Integer.parseInt(eventInfo.get("invokerid")) == ts3connector.getConnector().getCurrentQueryClientID() ) {
-				return;
+				return; // own action
 			}
 			for(E i : event_chat){
 				i.handleTextMessage(eventType, eventInfo);
@@ -187,22 +188,26 @@ public class Instance<E extends ModEvent & TS3Event> implements TeamspeakActionL
 			if ((eventType + eventInfo.toString()).equals(this.lastActionString)) { // double event firing bug
 				return;
 			}
-			if(eventType.equals("notifyclientleftview")){
-//				logger.info("running client left {}",event_joined.size());
+			switch(eventType){
+			case "notifyserveredited":
+				return;
+			case "notifyclientleftview":
 				for(E i : event_left){
 					i.handleClientLeft(eventInfo);
 				}
-			}else if(eventType.equals("notifycliententerview")){
-//				logger.info("running client joined {}",event_joined.size());
+				break;
+			case "notifycliententerview":
 				for(E i : event_joined){
 					i.handleClientJoined(eventInfo);
 				}
-			}else if(eventType.equals("notifyclientmoved")){
+				break;
+			case "notifyclientmoved":
 				for(E i : event_move){
 					i.handleClientMoved(eventInfo);
 				}
-			}else{
-				logger.info("Unknown event: {}",eventType);
+				break;
+			default:
+				logger.info("Unknown event {}",eventType);
 			}
 			lastActionString = eventType + eventInfo.toString();
 		}

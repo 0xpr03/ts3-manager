@@ -27,8 +27,8 @@ import org.apache.logging.log4j.Logger;
 import Aron.Heinecke.ts3Manager.Instance;
 import Aron.Heinecke.ts3Manager.Lib.SBuffer;
 import Aron.Heinecke.ts3Manager.Lib.MYSQLConnector;
-import Aron.Heinecke.ts3Manager.Lib.API.ModEvent;
-import Aron.Heinecke.ts3Manager.Lib.API.TS3Event;
+import Aron.Heinecke.ts3Manager.Lib.API.Mod;
+import Aron.Heinecke.ts3Manager.Lib.API.ModRegisters;
 import de.stefan1200.jts3serverquery.JTS3ServerQuery;
 import de.stefan1200.jts3serverquery.TS3ServerQueryException;
 
@@ -37,7 +37,7 @@ import de.stefan1200.jts3serverquery.TS3ServerQueryException;
  * Non-Blocking 
  * @author Aron Heinecke
  */
-public class ModStats implements ModEvent, TS3Event {
+public class ModStats implements Mod {
 	Logger logger = LogManager.getLogger();
 	private long last_update = 0L;
 	private Instance<?> instance;
@@ -123,6 +123,7 @@ public class ModStats implements ModEvent, TS3Event {
 
 	/**
 	 * Internal update scheduler, shouldn't be called directly
+	 * Called if there is a high rate of join/leaves after some time to avoid db spamming
 	 */
 	private void addUpdate() {
 		try {
@@ -155,31 +156,16 @@ public class ModStats implements ModEvent, TS3Event {
 		logger.debug("Client left {}", tableName);
 		updateClients();
 	}
-
+	
 	@Override
-	public boolean needs_Event_Channel() {
-		return false;
-	}
-
-	@Override
-	public boolean needs_Event_Server() {
-		// TODO Auto-generated method stub
-		return true;
-	}
-
-	@Override
-	public boolean needs_Event_TextChannel() {
-		return false;
-	}
-
-	@Override
-	public boolean needs_Event_TextPrivate() {
-		return false;
-	}
-
-	@Override
-	public boolean needs_Event_TextServer() {
-		return false;
+	public ModRegisters registerEvents(){
+		return new ModRegisters.Builder()
+				.eventChannel(false)
+				.eventServer(true)
+				.eventTextChannel(false)
+				.eventTextPrivate(false)
+				.eventTextServer(false)
+				.build();
 	}
 
 	/**
