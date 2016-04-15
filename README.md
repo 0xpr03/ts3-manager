@@ -7,8 +7,11 @@ This project comes with 2 built in mods.
 - Rocket bot, it is meant more as a joke and will throw a user through every (non) taken channel in a blink of a second and then kick him.
 
 ### Requirements
+- JRE 7 or higher
 - TS3 with query access
-- MariaDB at best if you want to use the statistics bot
+- MariaDB at best if you want to use the statistics module
+
+For compiled binaries see section "release"
 
 ### Notes
 This is only a backend, a visualization like the following for your statistics is up to you.
