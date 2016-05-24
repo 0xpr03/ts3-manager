@@ -1,15 +1,16 @@
 TS3 Manager
 ===========
 
-A modular multi-server ts3 bot running over the ts3query.
-This project comes with 2 built in mods.
-- Statistics Bot logging the current user amount everytime one joins/leaves into MariaDB / 
-- Rocket bot, it is meant more as a joke and will throw a user through every (non) taken channel in a blink of a second and then kick him.
+A modular multi server ts3 bot running over the ts3query.  
+You can easily add your own mods and functionalities by implementing the interface Mod.
+This project comes with 2 built in mods:
+- Statistics Bot logging the current user amount everytime one joins/leaves into MariaDB / MySQL
+- Rocket bot, it is meant more as a demo/joke and will throw a user through every (non) taken channel in a blink of a second and then kick him.
 
 ### Requirements
 - JRE 7 or higher
-- TS3 with query access
-- MariaDB at best if you want to use the statistics module
+- TS3 with query access, whitelist access to avoid spam kicks
+- MariaDB/MySQL at best if you want to use the built in statistics module
 
 For compiled binaries see section "release"
 

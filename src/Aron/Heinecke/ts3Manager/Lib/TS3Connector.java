@@ -84,6 +84,7 @@ public class TS3Connector<U extends TeamspeakActionListener> {
 			return;
 		}
 		try{
+			if(channel != -1)
 			query.moveClient(query.getCurrentQueryClientID(), channel, null);
 		}catch(TS3ServerQueryException e){
 			logger.warn("Error on joining channel!");
@@ -204,7 +205,7 @@ public class TS3Connector<U extends TeamspeakActionListener> {
 				logger.error("Reconnect failed for SID {} \n{}", sID,e.getMessage());
 			}
 		} catch (Exception e) {
-			logger.error("Error during connection check for SID {} \n{}", sID,e.getMessage());
+			logger.error("Error during connection check for SID {}, listener:{} \n{}", sID,listener.getClass().getName(),e.getMessage());
 		}
 	}
 }

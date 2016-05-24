@@ -35,6 +35,10 @@ public class MYSQLConnector {
 	
 	private final int MS_CONNECTION_CHECK_TIMEOUT = 20;
 	
+	/**
+	 * Creates a new MYSQL (mariaDB) connector<br>
+	 * Connector should be closed at the end via disconnect()
+	 */
 	public MYSQLConnector(){
 		connect();
 	}

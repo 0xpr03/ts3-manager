@@ -95,7 +95,7 @@ public class Instance<E extends Mod> implements TeamspeakActionListener {
 	 * Returns a new ts3 connection
 	 * @param i action receiver class
 	 * @param bot_name
-	 * @param channel_id
+	 * @param channel_id can be -1 for no move
 	 * @return null on failure
 	 */
 	public <U extends TeamspeakActionListener> TS3Connector<U> getNewTS3Connector(U i, String bot_name, int channel_id){
