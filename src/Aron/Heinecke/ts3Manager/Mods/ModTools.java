@@ -55,16 +55,15 @@ public class ModTools implements Mod {
 				throw new NumberFormatException();
 			}
 			List<Integer> channels = new ArrayList<Integer>();
-			Vector<HashMap<String, String>> a = ts3conn.getConnector().getList(JTS3ServerQuery.LISTMODE_CHANNELLIST);
-			for ( HashMap<String, String> b : a ) {
-				if ( b.get("total_clients").equals("0") || ignore_clients ) {
-					channels.add(Integer.valueOf(b.get("cid")));
+			Vector<HashMap<String, String>> rawChannelList = ts3conn.getConnector().getList(JTS3ServerQuery.LISTMODE_CHANNELLIST);
+			for ( HashMap<String, String> channel : rawChannelList ) {
+				if ( channel.get("total_clients").equals("0") || ignore_clients ) {
+					channels.add(Integer.valueOf(channel.get("cid")));
 				}
 			}
-			int i = channels.size() - 1;
-			while (i >= 0) {
-				ts3conn.getConnector().moveClient(tid, channels.get(i), "");
-				i--;
+			logger.debug("Channels used for rocket:\n{}",channels);
+			for(int x = channels.size() -1; x >= 0; x--){
+				ts3conn.getConnector().moveClient(tid, channels.get(x), "");
 				try {
 					Thread.sleep(40);
 				} catch ( InterruptedException e ) {
@@ -72,10 +71,10 @@ public class ModTools implements Mod {
 				}
 			}
 			ts3conn.getConnector().kickClient(tid, false, "You were rocketed!");
-			ts3conn.getConnector().sendTextMessage(applicant, JTS3ServerQuery.TEXTMESSAGE_TARGET_CLIENT, "[b]Client " + tmap.get("client_nickname")+ "[" + tmap.get("client_database_id") + "] wurde rocketed![/b]");
+			ts3conn.getConnector().sendTextMessage(applicant, JTS3ServerQuery.TEXTMESSAGE_TARGET_CLIENT, "[b]Client " + tmap.get("client_nickname")+ "[" + tmap.get("client_database_id") + "] was rocketed![/b]");
 		} catch ( NumberFormatException e ) {
 			try {
-				ts3conn.getConnector().sendTextMessage(applicant, JTS3ServerQuery.TEXTMESSAGE_TARGET_CLIENT, "[b]Client " + target + " nicht gefunden![/b]");
+				ts3conn.getConnector().sendTextMessage(applicant, JTS3ServerQuery.TEXTMESSAGE_TARGET_CLIENT, "[b]Client " + target + " wasn't found![/b] Please specify a valid (local)id.");
 			} catch (TS3ServerQueryException e1) {
 				logger.fatal(e1);
 			}
@@ -109,7 +108,7 @@ public class ModTools implements Mod {
 				case "help":
 				default:
 					misCMD = true;
-					logger.warn("unknown cmd");
+					logger.warn("unknown command");
 				}
 				if(misCMD){
 					instance.getTS3Connection().getConnector().sendTextMessage(sID, JTS3ServerQuery.TEXTMESSAGE_TARGET_CLIENT, CMD_HELP);

@@ -34,7 +34,7 @@ import de.stefan1200.jts3serverquery.TS3ServerQueryException;
 
 /**
  * ModStats server usage statistics
- * Non-Blocking 
+ * Non-Blocking
  * @author Aron Heinecke
  */
 public class ModStats implements Mod {
@@ -175,7 +175,9 @@ public class ModStats implements Mod {
 					+ " PRIMARY KEY (`timestamp`)"
 					+ ") ENGINE=InnoDB DEFAULT CHARSET=latin1 ROW_FORMAT=COMPRESSED COMMENT='%s'", tableName, instance.getTS3Connection()
 							.getConnector().getInfo(JTS3ServerQuery.INFOMODE_SERVERINFO, 0).get("virtualserver_name"));
-			new MYSQLConnector().execUpdateQuery(table);
+			MYSQLConnector conn = new MYSQLConnector();
+			conn.execUpdateQuery(table);
+			conn.disconnect();
 		} catch (SQLException | TS3ServerQueryException e) {
 			logger.error("{}", e);
 		}
