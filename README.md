@@ -14,6 +14,12 @@ This project comes with 2 built in mods:
 
 For compiled binaries see section "release"
 
+### Setup
+- start the bot for the first time
+- edit the config file
+- create a log4j2.xml in the root dir of the bot to override the log settings
+- restart the bot
+
 ### Notes
 This is only a backend, a visualization like the following for your statistics is up to you.
 
