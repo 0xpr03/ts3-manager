@@ -111,7 +111,7 @@ public class ConfigLib {
 	 * X.instance_features:
 	 * @param config
 	 */
-	@SuppressWarnings({ "unchecked", "rawtypes" })
+	@SuppressWarnings({ "unchecked" })
 	public List<Instance> loadInstances(){
 		List<Instance> list = new ArrayList<Instance>();
 		int i = 1;

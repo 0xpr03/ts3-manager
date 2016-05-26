@@ -20,7 +20,7 @@ import Aron.Heinecke.ts3Manager.Lib.API.ModRegisters;
  */
 public class ModTest implements Mod {
 	private Logger logger = LogManager.getLogger();
-	private Instance<?> instance;
+	private Instance instance;
 	private boolean RUN = false;
 	private int BASE_MS = 50;
 	private int AMOUNT_THREADS = 30;
@@ -30,7 +30,7 @@ public class ModTest implements Mod {
 	 * ModTest with various test bots
 	 * @param instance
 	 */
-	public ModTest(Instance<?> instance){
+	public ModTest(Instance instance){
 		this.instance = instance;
 	}
 

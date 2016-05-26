@@ -18,6 +18,8 @@ import java.util.TimerTask;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import Aron.Heinecke.ts3Manager.Config;
+import Aron.Heinecke.ts3Manager.Instance;
 import de.stefan1200.jts3serverquery.JTS3ServerQuery;
 import de.stefan1200.jts3serverquery.TS3ServerQueryException;
 import de.stefan1200.jts3serverquery.TeamspeakActionListener;
@@ -48,7 +50,19 @@ public class TS3Connector<U extends TeamspeakActionListener> {
 	private boolean textPrivate = false;
 	private boolean textServer = false;
 	
-	public TS3Connector(U listener, int id, String ip, int port, String user, String password, String name,int channel) throws TS3ServerQueryException{
+	/**
+	 * New TS3Connector
+	 * @param listener
+	 * @param id
+	 * @param ip
+	 * @param port
+	 * @param user
+	 * @param password
+	 * @param name
+	 * @param channel
+	 * @throws TS3ConnectionException if the initial connect fails
+	 */
+	public TS3Connector(U listener, int id, String ip, int port, String user, String password, String name,int channel) throws TS3ConnectionException{
 		query = new JTS3ServerQuery();
 		this.sID = id;
 		this.ip = ip;
@@ -58,31 +72,32 @@ public class TS3Connector<U extends TeamspeakActionListener> {
 		this.user = user;
 		this.channel = channel;
 		this.listener = listener;
-		connect();
-		
-		startTimer();
+		do{
+			try{
+				connect();
+				startTimer();
+			}catch (TS3ServerQueryException sqe){
+				logger.fatal("Error during connection establishment! Instance {}",sID);
+				if (sqe.getFailedPermissionID() >= 0)
+					logger.warn("Missing permissions! {} on sID {}",sqe.getFailedPermissionID(),sID);
+			}catch(Exception e){
+				logger.fatal("Socket exception, server down ?\n{}",e);
+			}
+		}while(timer == null && Config.getBoolValue("CONNECTIONS_RETRY"));
+		if(timer == null){
+			throw new TS3ConnectionException();
+		}
 	}
 	
 	/**
 	 * Connect is inside a new class for checkConnect
-	 * @throws TS3ServerQueryException
+	 * @throws Exception 
 	 */
-	private void connect() throws TS3ServerQueryException{
-		try{
-			query.connectTS3Query(ip, port);
-			query.loginTS3(user, password);
-			query.selectVirtualServer(sID);
-			query.setTeamspeakActionListener(listener);
-			
-		}catch (TS3ServerQueryException sqe){
-			logger.fatal("Instance id {} Error during Connection establishing!");
-			if (sqe.getFailedPermissionID() >= 0)
-				logger.info("Missing permissions");
-			throw sqe;
-		}catch (Exception e){
-			logger.fatal(e);
-			return;
-		}
+	private void connect() throws Exception{
+		query.connectTS3Query(ip, port);
+		query.loginTS3(user, password);
+		query.selectVirtualServer(sID);
+		query.setTeamspeakActionListener(listener);
 		try{
 			if(channel != -1)
 			query.moveClient(query.getCurrentQueryClientID(), channel, null);
@@ -201,11 +216,24 @@ public class TS3Connector<U extends TeamspeakActionListener> {
 				query.closeTS3Connection();
 				connect();
 				registerEvents();
-			} catch (Exception e) {
-				logger.error("Reconnect failed for SID {} \n{}", sID,e.getMessage());
+			} catch (TS3ServerQueryException e) {
+				if(e.getErrorID() == 1033){ // #2
+					logger.warn("Server instance SID {} is down! Can't connect.",sID);
+				}else{
+					logger.error("Reconnect failed for SID {} \n{}", sID,e.getMessage());
+				}
+				if(!Config.getBoolValue("CONNECTIONS_RETRY")){
+					if(listener instanceof Instance){
+						logger.info("No retry enabled, shutting down the instance.");
+						((Instance)listener).shutdown();
+					}
+				}
 			}
 		} catch (Exception e) {
 			logger.error("Error during connection check for SID {}, listener:{} \n{}", sID,listener.getClass().getName(),e.getMessage());
 		}
 	}
+	
+	
+	
 }

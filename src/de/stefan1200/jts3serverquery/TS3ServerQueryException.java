@@ -7,6 +7,7 @@ package de.stefan1200.jts3serverquery;
  */
 public class TS3ServerQueryException extends Exception
 {
+	private static final long serialVersionUID = 1L;
 	String apiMethodName;
 	int errorID;
 	String errorMessage;

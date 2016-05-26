@@ -32,8 +32,7 @@ import Aron.Heinecke.ts3Manager.Lib.ConfigLib;
  */
 public class TS3Manager {
 	private static Logger logger = LogManager.getLogger();
-	private static String VERSION = "0.3";
-	@SuppressWarnings("rawtypes")
+	private static String VERSION = "0.3.2";
 	private static List<Instance> instances = new ArrayList<Instance>();
 	
 	/**
@@ -43,7 +42,7 @@ public class TS3Manager {
 	 * @param args
 	 */
 	public static void main(String[] args){
-		logger.info("Starting up version {}",VERSION);
+		logger.info("Starting up TS3-Manager version {}",VERSION);
 		
 		ConfigLib cfglib = new ConfigLib();
 		boolean loaded = false;
@@ -77,11 +76,15 @@ public class TS3Manager {
 		}
 	}
 	
+	public static void removeInstance(Instance instance){
+		instances.remove(instance);
+	}
+	
 	private static void registerExitFunction(){
 		Runtime.getRuntime().addShutdownHook(new Thread() {
 			@Override
 			public void run() {
-				for(Instance<?> i : instances){
+				for(Instance i : instances){
 					i.shutdown();
 				}
 			}

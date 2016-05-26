@@ -32,7 +32,7 @@ import de.stefan1200.jts3serverquery.TeamspeakActionListener;
  * @author Aron Heinecke
  * @param <E>
  */
-public class Instance<E extends Mod> implements TeamspeakActionListener {
+public class Instance implements TeamspeakActionListener {
 	private Logger logger = LogManager.getLogger();
 	private int SID;
 	private boolean retry;
@@ -40,11 +40,11 @@ public class Instance<E extends Mod> implements TeamspeakActionListener {
 	private int CHANNEL;
 	public int ADMIN_GROUP;
 	private HashMap<String, Boolean> enabled_features;
-	private Vector<E> mods = new Vector<E>();
-	private Vector<E> event_joined = new Vector<E>();
-	private Vector<E> event_left = new Vector<E>();
-	private Vector<E> event_chat = new Vector<E>();
-	private Vector<E> event_move = new Vector<E>();
+	private Vector<Mod> mods = new Vector<>();
+	private Vector<Mod> event_joined = new Vector<>();
+	private Vector<Mod> event_left = new Vector<>();
+	private Vector<Mod> event_chat = new Vector<>();
+	private Vector<Mod> event_move = new Vector<>();
 	private TS3Connector<?> ts3connector;
 	private String lastActionString = "";
 	
@@ -62,6 +62,7 @@ public class Instance<E extends Mod> implements TeamspeakActionListener {
 		this.enabled_features = features;
 		this.ADMIN_GROUP = admin_group;
 		retry = Config.getBoolValue("CONNECTIONS_RETRY");
+		final Instance selfRef = this;
 		Thread t = new Thread(){
 			public void run(){
 				boolean connected = false;
@@ -73,22 +74,24 @@ public class Instance<E extends Mod> implements TeamspeakActionListener {
 					createFeatures();
 				else{
 					logger.error("Failed to connect to SID {}, disabling instance.", SID);
+					TS3Manager.removeInstance(selfRef);
 				}
 			}
 		};
 		t.start();
 	}
 	
-	private Instance<E> getInstance(){
+	private Instance getInstance(){
 		return this;
 	}
 	
 	public void shutdown(){
 		logger.entry();
-		for(E e : mods){
-			e.handleShutdown();
+		for(Mod mod : mods){
+			mod.handleShutdown();
 		}
 		ts3connector.disconnect();
+		
 	}
 	
 	/**
@@ -101,7 +104,7 @@ public class Instance<E extends Mod> implements TeamspeakActionListener {
 	public <U extends TeamspeakActionListener> TS3Connector<U> getNewTS3Connector(U i, String bot_name, int channel_id){
 		try {
 			return new TS3Connector<U>(i, SID, Config.getStrValue("TS3_IP"), Config.getIntValue("TS3_PORT"), Config.getStrValue("TS3_USER"), Config.getStrValue("TS3_PASSWORD"),bot_name, channel_id);
-		} catch (TS3ServerQueryException e) {
+		} catch (Exception e) {
 			logger.warn("{} for SID {}",e, SID);
 			return null;
 		}
@@ -133,8 +136,7 @@ public class Instance<E extends Mod> implements TeamspeakActionListener {
 				try {
 					Class<?> newMod = Class.forName("Aron.Heinecke.ts3Manager.Mods." + fnName);
 					if(Mod.class.isAssignableFrom(newMod)){
-						@SuppressWarnings("unchecked")
-						E mod = (E) newMod.getDeclaredConstructor(Instance.class).newInstance(this);
+						Mod mod = (Mod) newMod.getDeclaredConstructor(Instance.class).newInstance(this);
 						if(mod == null){
 							logger.fatal("object ist null!");
 						}
@@ -170,7 +172,7 @@ public class Instance<E extends Mod> implements TeamspeakActionListener {
 		
 		ts3connector.registerEvents(serverEvent, channelEvent, textServer, textChannel, textPrivate);
 		
-		for(E i: mods){
+		for(Mod i: mods){
 			i.handleReady();
 		}
 	}
@@ -181,7 +183,7 @@ public class Instance<E extends Mod> implements TeamspeakActionListener {
 			if ( Integer.parseInt(eventInfo.get("invokerid")) == ts3connector.getConnector().getCurrentQueryClientID() ) {
 				return; // own action
 			}
-			for(E i : event_chat){
+			for(Mod i : event_chat){
 				i.handleTextMessage(eventType, eventInfo);
 			}
 		} else {
@@ -192,17 +194,17 @@ public class Instance<E extends Mod> implements TeamspeakActionListener {
 			case "notifyserveredited":
 				return;
 			case "notifyclientleftview":
-				for(E i : event_left){
+				for(Mod i : event_left){
 					i.handleClientLeft(eventInfo);
 				}
 				break;
 			case "notifycliententerview":
-				for(E i : event_joined){
+				for(Mod i : event_joined){
 					i.handleClientJoined(eventInfo);
 				}
 				break;
 			case "notifyclientmoved":
-				for(E i : event_move){
+				for(Mod i : event_move){
 					i.handleClientMoved(eventInfo);
 				}
 				break;

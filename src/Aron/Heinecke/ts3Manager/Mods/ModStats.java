@@ -41,7 +41,7 @@ import de.stefan1200.jts3serverquery.TS3ServerQueryException;
 public class ModStats implements Mod {
 	Logger logger = LogManager.getLogger();
 	private long last_update = 0L;
-	private Instance<?> instance;
+	private Instance instance;
 	private Timer timer;
 	private TimerTask timerdosnapshot;
 	private Timer bufferTimer;
@@ -55,7 +55,7 @@ public class ModStats implements Mod {
 	private final int SPAM_INTERVALL = 1500; // > 1 sek, as mysql and mariadb < 5.3 aren't storing MS, see #3
 	private final Object lock = new Object();
 
-	public ModStats(Instance<?> instance) {
+	public ModStats(Instance instance) {
 		this.instance = instance;
 		logger.debug("Instance: {}", this.instance.getSID());
 		tableName = "ModStats_" + instance.getSID();

@@ -28,13 +28,13 @@ import de.stefan1200.jts3serverquery.JTS3ServerQuery;
 import de.stefan1200.jts3serverquery.TS3ServerQueryException;
 
 public class ModTools implements Mod {
-	private Instance<?> instance;
+	private Instance instance;
 	private Logger logger = LogManager.getLogger();
 	private String CMD_HELP = "TS3Manager - ToolsMod\n!tools rocket [client_id] [ignore]\nuse [ignore] to rocket through used channels.";
 	
 	private final String PERM_MSG = "Not enough permissions to perform this action !";
 	
-	public ModTools(Instance<?> instance){
+	public ModTools(Instance instance){
 		this.instance = instance;
 	}
 	
@@ -143,6 +143,7 @@ public class ModTools implements Mod {
 		return new ModRegisters.Builder()
 				.eventTextChannel(true)
 				.eventTextPrivate(true)
+				.eventTextServer(true)
 				.build();
 	}
 
