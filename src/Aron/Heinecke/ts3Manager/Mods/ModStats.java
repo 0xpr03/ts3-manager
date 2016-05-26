@@ -14,6 +14,7 @@ package Aron.Heinecke.ts3Manager.Mods;
 
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
+import java.sql.SQLIntegrityConstraintViolationException;
 import java.sql.Timestamp;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -33,8 +34,8 @@ import de.stefan1200.jts3serverquery.JTS3ServerQuery;
 import de.stefan1200.jts3serverquery.TS3ServerQueryException;
 
 /**
- * ModStats server usage statistics
- * Non-Blocking
+ * ModStats: server usage statistics<br>
+ * per join / leave, Non-Blocking
  * @author Aron Heinecke
  */
 public class ModStats implements Mod {
@@ -51,6 +52,8 @@ public class ModStats implements Mod {
 	private MYSQLConnector conn = null;
 	private SBuffer<DataElem> sBuffer = new SBuffer<DataElem>(2);
 	private final int SCHEDULE_TIME = 15*60*1000; // 15 minutes
+	private final int SPAM_INTERVALL = 1500; // > 1 sek, as mysql and mariadb < 5.3 aren't storing MS, see #3
+	private final Object lock = new Object();
 
 	public ModStats(Instance<?> instance) {
 		this.instance = instance;
@@ -93,7 +96,11 @@ public class ModStats implements Mod {
 				stm.setTimestamp(1, de.getTimestamp());
 				stm.setInt(2, de.getClients());
 				stm.setInt(3, de.getQueryclients());
-				stm.executeUpdate();
+				try{ // issue #3
+					stm.executeUpdate();
+				}catch(SQLIntegrityConstraintViolationException e){
+					logger.warn("Ignoring dataset: {}\n{}",de.toString(),e);
+				}
 				iterator.remove();
 			}
 			stm.close();
@@ -108,16 +115,20 @@ public class ModStats implements Mod {
 
 	/**
 	 * Request update<br>
-	 * Lazy scheduling stops rapid updates on massive join/leaves
+	 * Lazy scheduling stops rapid updates on massive joins/leaves
 	 */
 	private void updateClients() {
-		if (System.currentTimeMillis() - last_update >= 1000) {
-			last_update = System.currentTimeMillis();
-			addUpdate();
-		} else { // too short timespan, we'll create a datapoint later
-			logger.debug("Scheduling later");
-			timer = new Timer(false);
-			timer.schedule(timerdosnapshot, 1000);
+		synchronized(lock){ // #3 prevention, still fast enough to withstand ModTest CN/DC spams
+			if ((System.currentTimeMillis() - last_update) >= SPAM_INTERVALL) {
+				last_update = System.currentTimeMillis();
+				addUpdate();
+				if(timer != null)
+					timer.cancel();
+			} else { // too short timespan, we'll create a datapoint later
+				logger.debug("Scheduling later");
+				timer = new Timer(false);
+				timer.schedule(timerdosnapshot, 1000);
+			}
 		}
 	}
 
@@ -241,6 +252,11 @@ public class ModStats implements Mod {
 
 		public int getQueryclients() {
 			return queryclients;
+		}
+		
+		@Override
+		public String toString(){
+			return "date: "+timestamp +" clients: "+ clients+" qe:"+ queryclients;
 		}
 	}
 }
