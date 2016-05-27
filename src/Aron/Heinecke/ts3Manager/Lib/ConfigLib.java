@@ -44,6 +44,10 @@ public class ConfigLib {
 	Yaml yaml = new Yaml();
 	private File FILE = new File(System.getProperty("user.dir")+"/"+CONFIG_FILE);
 	
+	public ConfigLib(){
+		logger.info("Config file: {}",FILE.getAbsolutePath());
+	}
+	
 	/**
 	 * TestMockup only for file scheme testing
 	 * @throws IOException

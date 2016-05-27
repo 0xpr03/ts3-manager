@@ -17,11 +17,19 @@
  *************************************************************************/
 package Aron.Heinecke.ts3Manager;
 
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
+import java.io.Writer;
 import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.core.config.Configurator;
 import org.yaml.snakeyaml.scanner.ScannerException;
 
 import Aron.Heinecke.ts3Manager.Lib.ConfigLib;
@@ -42,6 +50,7 @@ public class TS3Manager {
 	 * @param args
 	 */
 	public static void main(String[] args){
+		checkLoggingConf();
 		logger.info("Starting up TS3-Manager version {}",VERSION);
 		
 		ConfigLib cfglib = new ConfigLib();
@@ -90,5 +99,36 @@ public class TS3Manager {
 			}
 		});
 	}
-	
+	/**
+	 * Checks if a new config is existing, to overwrite the internal logging conf
+	 */
+	private static void checkLoggingConf() {
+		java.io.File f = new java.io.File( ClassLoader.getSystemClassLoader().getResource(".").getPath()+"/log.xml");
+		if (f.exists() && f.isFile()){
+			if (Configurator.initialize(null, f.getAbsolutePath()) == null) {
+				logger.error("Faulty log config: {}",f.getAbsolutePath());
+				System.err.println("Faulty log config {}"+f.getAbsolutePath());
+			}
+		}else{
+			try{
+				final String encoding = "UTF-8";
+				f.createNewFile();
+				Writer writer = new BufferedWriter(new OutputStreamWriter(
+			              new FileOutputStream(f.getAbsolutePath()), encoding));
+				BufferedReader reader = new BufferedReader(new InputStreamReader(Class.class.getResourceAsStream("/log4j2.xml"), encoding));
+			    String line = null;
+			    while ((line = reader.readLine()) != null) {
+			        writer.write(line);
+			        writer.write("\n");
+			    }
+			    writer.flush();
+			    writer.close();
+			    reader.close();
+			    logger.info("Created editable logging config in {}",f.getAbsolutePath());
+			} catch (IOException x) {
+				logger.error("Writing logging config {}",x);
+			    System.err.format("IOException: %s%n", x);
+			}
+		}
+	}
 }

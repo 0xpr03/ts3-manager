@@ -17,7 +17,7 @@ For compiled binaries see section "release"
 ### Setup
 - start the bot for the first time
 - edit the config file
-- create a log4j2.xml in the root dir of the bot to override the log settings
+- edit the log.xml file to change the log to your likes (verbose by default)
 - restart the bot
 
 ### Notes
