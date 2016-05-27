@@ -1,6 +1,6 @@
 /**************************************************************************
  * Modular bot for teamspeak 3 (c)
- * Copyright (C) 2015 Aron Heinecke
+ * Copyright (C) 2015-2016 Aron Heinecke
  * 
  * 
  * 
@@ -43,10 +43,6 @@ public class ConfigLib {
 	private String CONFIG_FILE = "config.yml";
 	Yaml yaml = new Yaml();
 	private File FILE = new File(System.getProperty("user.dir")+"/"+CONFIG_FILE);
-	
-	public ConfigLib(){
-		logger.info("Config file: {}",FILE.getAbsolutePath());
-	}
 	
 	/**
 	 * TestMockup only for file scheme testing

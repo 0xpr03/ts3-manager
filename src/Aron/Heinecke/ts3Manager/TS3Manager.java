@@ -1,6 +1,6 @@
 /**************************************************************************
  * Modular bot for teamspeak 3 (c)
- * Copyright (C) 2015 Aron Heinecke
+ * Copyright (C) 2015-2016 Aron Heinecke
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -99,8 +99,10 @@ public class TS3Manager {
 			}
 		});
 	}
+	
 	/**
-	 * Checks if a new config is existing, to overwrite the internal logging conf
+	 * Checks if a new config is existing, to overwrite the internal logging conf<br>
+	 * Otherwise trys to write the internal config into an external, editable file
 	 */
 	private static void checkLoggingConf() {
 		java.io.File f = new java.io.File( ClassLoader.getSystemClassLoader().getResource(".").getPath()+"/log.xml");
@@ -108,6 +110,8 @@ public class TS3Manager {
 			if (Configurator.initialize(null, f.getAbsolutePath()) == null) {
 				logger.error("Faulty log config: {}",f.getAbsolutePath());
 				System.err.println("Faulty log config {}"+f.getAbsolutePath());
+			}else{
+				logger.debug("Using external log configuration");
 			}
 		}else{
 			try{

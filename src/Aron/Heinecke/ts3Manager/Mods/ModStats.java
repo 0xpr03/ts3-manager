@@ -1,6 +1,6 @@
 /**************************************************************************
  * Modular bot for teamspeak 3 (c)
- * Copyright (C) 2015 Aron Heinecke
+ * Copyright (C) 2015-2016 Aron Heinecke
  * 
  * 
  * 
@@ -231,6 +231,10 @@ public class ModStats implements Mod {
 		logger.exit();
 	}
 
+	/**
+	 * Dataset for a single point in time
+	 * @author Aron Heinecke
+	 */
 	class DataElem {
 		private Timestamp timestamp;
 		private int clients;
