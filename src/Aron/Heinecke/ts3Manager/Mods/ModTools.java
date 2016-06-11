@@ -16,6 +16,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Vector;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -31,6 +32,7 @@ public class ModTools implements Mod {
 	private Instance instance;
 	private Logger logger = LogManager.getLogger();
 	private String CMD_HELP = "TS3Manager - ToolsMod\n!tools rocket [client_id] [ignore]\nuse [ignore] to rocket through used channels.";
+	private AtomicBoolean rocketRunning = new AtomicBoolean(false);
 	
 	private final String PERM_MSG = "Not enough permissions to perform this action !";
 	
@@ -45,6 +47,14 @@ public class ModTools implements Mod {
 	 * @param ignore_clients set to true to move also through channels with clients
 	 */
 	private void rocketchan(String target, int applicant, boolean ignore_clients) {
+		if(!rocketRunning.compareAndSet(false, true)) {
+			try {
+				this.instance.getTS3Connection().getConnector().sendTextMessage(applicant, JTS3ServerQuery.TEXTMESSAGE_TARGET_CLIENT, "[b]Already in use![/b]");
+			} catch (TS3ServerQueryException e) {
+				logger.error(e);
+			}
+			return;
+		}
 		TS3Connector<?> ts3conn = instance.getNewTS3Connector(null,"Rocket",-1);
 		try {
 			int tid = Integer.parseInt(target); // get targetid
@@ -64,6 +74,7 @@ public class ModTools implements Mod {
 			logger.debug("Channels used for rocket:\n{}",channels);
 			for(int x = channels.size() -1; x >= 0; x--){
 				ts3conn.getConnector().moveClient(tid, channels.get(x), "");
+				ts3conn.getConnector().pokeClient(tid, "move");
 				try {
 					Thread.sleep(40);
 				} catch ( InterruptedException e ) {
@@ -71,7 +82,8 @@ public class ModTools implements Mod {
 				}
 			}
 			ts3conn.getConnector().kickClient(tid, false, "You were rocketed!");
-			ts3conn.getConnector().sendTextMessage(applicant, JTS3ServerQuery.TEXTMESSAGE_TARGET_CLIENT, "[b]Client " + tmap.get("client_nickname")+ "[" + tmap.get("client_database_id") + "] was rocketed![/b]");
+			if(tid != applicant)
+				ts3conn.getConnector().sendTextMessage(applicant, JTS3ServerQuery.TEXTMESSAGE_TARGET_CLIENT, "[b]Client " + tmap.get("client_nickname")+ "[" + tmap.get("client_database_id") + "] was rocketed![/b]");
 		} catch ( NumberFormatException e ) {
 			try {
 				ts3conn.getConnector().sendTextMessage(applicant, JTS3ServerQuery.TEXTMESSAGE_TARGET_CLIENT, "[b]Client " + target + " wasn't found![/b] Please specify a valid (local)id.");
@@ -83,6 +95,7 @@ public class ModTools implements Mod {
 		}finally{
 			if(ts3conn != null)
 				ts3conn.disconnect();
+			rocketRunning.set(false);
 		}
 	}
 
