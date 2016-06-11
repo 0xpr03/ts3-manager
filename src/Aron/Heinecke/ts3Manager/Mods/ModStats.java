@@ -63,6 +63,7 @@ public class ModStats implements Mod {
 		timerdosnapshot = new TimerTask() {
 			@Override
 			public void run() {
+				logger.trace(tableName);
 				addUpdate();
 			}
 		};
@@ -122,13 +123,22 @@ public class ModStats implements Mod {
 			if ((System.currentTimeMillis() - last_update) >= SPAM_INTERVALL) {
 				last_update = System.currentTimeMillis();
 				addUpdate();
-				if(timer != null)
-					timer.cancel();
+				cancelLazySchedule();
 			} else { // too short timespan, we'll create a datapoint later
 				logger.debug("Scheduling later");
-				timer = new Timer(false);
+				timer = new Timer(true);
 				timer.schedule(timerdosnapshot, 1000);
 			}
+		}
+	}
+	
+	/**
+	 * Abort delayed scheduling
+	 */
+	private void cancelLazySchedule(){
+		if(timer != null){
+			timer.cancel();
+			timer = null;
 		}
 	}
 
@@ -213,22 +223,27 @@ public class ModStats implements Mod {
 	public void handleShutdown() {
 		logger.entry();
 		timerdosnapshot.cancel();
-		if (timer != null)
+		if (timer != null){ // cancel delayed schedule, schedule now
 			timer.cancel();
-		try {
-			if (stm != null){
-				if (!stm.isClosed())
-					stm.close();
-			}
-			if(conn != null)
-				conn.disconnect();
-		} catch (SQLException e) {
+			last_update = 0;
+			updateClients();
 		}
-		taskBuffer.cancel();
-		if(bufferTimer != null) 
-			bufferTimer.cancel();
-		insertBuffer();
-		logger.exit();
+		synchronized(lock){ // block inserts
+			try {
+				if (stm != null){
+					if (!stm.isClosed())
+						stm.close();
+				}
+				if(conn != null)
+					conn.disconnect();
+			} catch (SQLException e) {
+			}
+			taskBuffer.cancel();
+			if(bufferTimer != null) 
+				bufferTimer.cancel();
+			insertBuffer();
+			logger.exit();
+		}
 	}
 
 	/**
