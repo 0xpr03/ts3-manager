@@ -2,14 +2,25 @@ TS3 Manager
 ===========
 
 A modular multi server ts3 bot running over the ts3query.  
-You can easily add your own mods and functionalities by implementing the interface Mod.
+You can easily add your own mods and functionalities by implementing the interface provided.
 This project comes with 2 built in mods:
 - Statistics Bot logging the current user amount everytime one joins/leaves into MariaDB / MySQL
 - Rocket bot, it is meant more as a demo/joke and will throw a user through every (non) taken channel in a blink of a second and then kick him.
+- Test bot for the statistics module called ModTest, starting heavvy join & leave traffic triggered by the command "test DC" and stopped by "test stop"
+
+### Structure
+- Mods are loaded from <a href="src/Aron/Heinecke/ts3Manager/Mods/">src/Aron/Heinecke/ts3Manager/Mods/</a>
+  using the API declared in <a href="src/Aron/Heinecke/ts3Manager/Lib/API/">src/Aron/Heinecke/ts3Manager/Lib/API/</a>  
+  these are loaded & checked at runtime on initialization
+- [Instance.java](/src/Aron/Heinecke/ts3Manager/Instance.java) Represents an instance for one Server
+- [MYSQLConnector.java](/src/Aron/Heinecke/ts3Manager/Lib/MYSQLConnector.java) Is the MySQL connector keeping track of the connection state
+- [TS3Connector.java](/src/Aron/Heinecke/ts3Manager/Lib/TS3Connector.java) Represents an wrapper for the ts3 connection, keeping it alive /
+reconnecting if necessary
 
 ### Requirements
 - JRE 7 or higher
-- TS3 with query access, whitelist access to avoid spam kicks
+- TS3 with query access
+- TS3 whitelist access is required for high traffic bots like the rocket function
 - MariaDB/MySQL at best if you want to use the built in statistics module
 
 For compiled binaries see section "release"
@@ -21,13 +32,12 @@ For compiled binaries see section "release"
 - restart the bot
 
 ### Notes
-This is only a backend, a visualization like the following for your statistics is up to you.
+This is only a backend, no visualisation and/or frontend is shipped with this software.
+The following is an example of how such frontend for the statistics could look like.
 
 <div align="center">
 <a><img src="stats.png" /><a/> 
 </div>
-  
-You should be the admin of your ts3 server with an access to the query whitelist to avoid problems.
 
 ### License
 APGL http://www.gnu.org/licenses/agpl.html  
