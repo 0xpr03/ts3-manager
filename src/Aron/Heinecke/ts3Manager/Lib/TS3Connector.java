@@ -72,16 +72,28 @@ public class TS3Connector<U extends TeamspeakActionListener> {
 		this.user = user;
 		this.channel = channel;
 		this.listener = listener;
+		long lastErrMsg = System.currentTimeMillis();
+		boolean showedFlood = false;
 		do{
 			try{
 				connect();
 				startTimer();
-			}catch (TS3ServerQueryException sqe){
-				logger.fatal("Error during connection establishment! Instance {}",sID);
-				if (sqe.getFailedPermissionID() >= 0)
-					logger.warn("Missing permissions! {} on sID {}",sqe.getFailedPermissionID(),sID);
 			}catch(Exception e){
-				logger.fatal("Socket exception, server down ?\n{}",e);
+				if(System.currentTimeMillis() - lastErrMsg > 1000){
+					lastErrMsg = System.currentTimeMillis();
+					if(e instanceof TS3ServerQueryException){
+						TS3ServerQueryException e2 = (TS3ServerQueryException) e;
+						logger.fatal("Error during connection establishment! Instance {}",sID);
+						if (e2.getFailedPermissionID() >= 0)
+							logger.warn("Missing permissions! {} on sID {}",e2.getFailedPermissionID(),sID);
+						logger.warn("Suppressing error log flooting");
+					}else{
+						logger.fatal("Socket exception, server down ?\n{}",e);
+					}
+				}else if (!showedFlood){
+					showedFlood = true;
+					logger.warn("Suppressing log error flooding");
+				}
 			}
 		}while(timer == null && Config.getBoolValue("CONNECTIONS_RETRY"));
 		if(timer == null){
