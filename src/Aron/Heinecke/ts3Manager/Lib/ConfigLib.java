@@ -116,6 +116,7 @@ public class ConfigLib {
 		List<Instance> list = new ArrayList<Instance>();
 		int i = 1;
 		int loaded = 0;
+		//TODO: replace with config.keySet() iteration
 		while(config.containsKey(i+".instance_enabled")){
 			try{
 				if((boolean) config.get(i+".instance_enabled")){

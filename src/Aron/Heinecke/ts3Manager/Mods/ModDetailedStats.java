@@ -1,5 +1,5 @@
 /**************************************************************************
- * Modular bot for teamspeak 3 (c)
+a * Modular bot for teamspeak 3 (c)
  * Copyright (C) 2015-2016 Aron Heinecke
  * 
  * 

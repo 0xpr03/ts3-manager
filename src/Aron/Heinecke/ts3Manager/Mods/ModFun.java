@@ -20,8 +20,8 @@ import de.stefan1200.jts3serverquery.JTS3ServerQuery;
 import de.stefan1200.jts3serverquery.TS3ServerQueryException;
 
 /**
- * Experimental fun mod which randomly creates, deletes, moves and renamed channels.<br>
- * While it's only using it's self created channels for this actions, it's not adviced to run this on productive systems!
+ * Experimental fun mod which randomly creates, deletes, moves and renames channels.<br>
+ * While it's only modifying it's self created channels for this actions, it's not advised to run this on productive systems!
  * @author Aron Heinecke
  *
  */
@@ -56,12 +56,15 @@ public class ModFun implements Mod {
 	@Override
 	public void handleReady() {
 		ts3conn = instance.getNewTS3Connector(null,"h4ck3r",-1);
-		timer.schedule(timerTick, 200, 5300);
+		timer.schedule(timerTick, 200, 200000);
 	}
 	
+	/**
+	 * Tick method, run at specified interval
+	 */
 	private void tick(){
 		try{
-			if(getAmountClients() == 0){
+			if(getAmountClients() == 0){ // do nothing when noone is connected
 				return;
 			}
 			if(ThreadLocalRandom.current().nextFloat() > 0.5f ){ // 50%
@@ -123,7 +126,7 @@ public class ModFun implements Mod {
 		
 	    final String alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz1234567890";
 	    StringBuilder sb = new StringBuilder();
-	    sb.append("Dildario ");
+	    sb.append("FH ");
 	    for (int i = 0; i < length; i++) {
 	       sb.append(alphabet.charAt(r.nextInt(alphabet.length())));
 	    }

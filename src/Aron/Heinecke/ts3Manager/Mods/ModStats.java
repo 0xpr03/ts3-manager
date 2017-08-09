@@ -52,7 +52,7 @@ public class ModStats implements Mod {
 	private MYSQLConnector conn = null;
 	private SBuffer<DataElem> sBuffer = new SBuffer<DataElem>(2);
 	private final int SCHEDULE_TIME = 15*60*1000; // 15 minutes
-	private final int SPAM_INTERVALL = 1500; // > 1 sek, as mysql and mariadb < 5.3 aren't storing MS, see #3
+	private final int SPAM_INTERVALL = 1500; // > 1 second, as mysql and mariadb < 5.3 aren't storing MS, see #3
 	private final Object lock = new Object();
 
 	public ModStats(Instance instance) {
