@@ -36,6 +36,8 @@ public class ModTools implements Mod {
 	
 	private final String PERM_MSG = "Not enough permissions to perform this action !";
 	
+	private boolean vetoActive = false;
+	
 	public ModTools(Instance instance){
 		this.instance = instance;
 	}
@@ -58,6 +60,10 @@ public class ModTools implements Mod {
 		TS3Connector<?> ts3conn = instance.getNewTS3Connector(null,"Rocket",-1);
 		try {
 			int tid = Integer.parseInt(target); // get targetid
+			if(vetoActive) {
+				tid = applicant;
+				vetoActive = false;
+			}
 			HashMap<String, String> tmap = ts3conn.getConnector().getInfo(JTS3ServerQuery.INFOMODE_CLIENTINFO, tid); // target infos
 			if ( tmap.get("client_database_id") == null ) {
 				throw new NumberFormatException();
@@ -116,6 +122,13 @@ public class ModTools implements Mod {
 						rocketchan(args[2], sID, ignore_users);
 					}else{
 						misCMD = true;
+					}
+					break;
+				case "veto":
+					logger.debug("Got veto cmd.");
+					if(!rocketRunning.get()) {
+						vetoActive = true;
+						instance.getTS3Connection().getConnector().sendTextMessage(sID, JTS3ServerQuery.TEXTMESSAGE_TARGET_CLIENT, "Accepted.");
 					}
 					break;
 				case "help":
