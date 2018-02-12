@@ -18,16 +18,18 @@ import java.sql.SQLIntegrityConstraintViolationException;
 import java.sql.Timestamp;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.Optional;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.Vector;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.eclipse.jdt.annotation.Nullable;
 
 import Aron.Heinecke.ts3Manager.Instance;
-import Aron.Heinecke.ts3Manager.Lib.SBuffer;
 import Aron.Heinecke.ts3Manager.Lib.MYSQLConnector;
+import Aron.Heinecke.ts3Manager.Lib.SBuffer;
 import Aron.Heinecke.ts3Manager.Lib.API.Mod;
 import Aron.Heinecke.ts3Manager.Lib.API.ModRegisters;
 import de.stefan1200.jts3serverquery.JTS3ServerQuery;
@@ -40,36 +42,55 @@ import de.stefan1200.jts3serverquery.TS3ServerQueryException;
  */
 public class ModDetailedStats implements Mod {
 	Logger logger = LogManager.getLogger();
-	private long last_update = 0L;
+	private static final String C_LID = "clid";
+	private static final String C_DBID = "client_database_id";
+	private static final String C_NAME = "client_nickname";
 	private Instance instance;
-	private Timer timer;
-	private TimerTask timerdosnapshot;
 	private Timer bufferTimer;
 	private TimerTask taskBuffer;
-	private PreparedStatement stm = null;
-	private String sql;
-	private String tableName;
+	private PreparedStatement stmStats = null;
+	private final String sqlStats;
+	private final String sqlNames;
+	private final String tableStats;
+	private final String tableNames;
 	private MYSQLConnector conn = null;
 	private SBuffer<DataElem> sBuffer = new SBuffer<DataElem>(2);
+	
+	// temporary ID : DB ID
+	private HashMap<Integer,Integer> clientMapping;
+	private Object lock = new Object();
 	private final int SCHEDULE_TIME = 15*60*1000; // 15 minutes
-	private final int SPAM_INTERVALL = 1500; // > 1 sek, as mysql and mariadb < 5.3 aren't storing MS, see #3
-	private final Object lock = new Object();
+	private PreparedStatement stmNames;
 
+	/**
+	 * New detailed stats module
+	 * @param instance
+	 */
 	public ModDetailedStats(Instance instance) {
+		logger.debug("Instance: {}", instance.getPSID());
 		this.instance = instance;
-		logger.debug("Instance: {}", this.instance.getSID());
-		tableName = "moddetailedstats_" + instance.getSID();
-		sql = String.format("INSERT INTO %s (`timestamp`,`clients`,`queryclients`) VALUES (?,?,?);", tableName);
-		timerdosnapshot = new TimerTask() {
-			@Override
-			public void run() {
-				addUpdate();
-			}
-		};
+		clientMapping = new HashMap<>(20);
+		tableStats = "mDSStats_" + instance.getPSID();
+		tableNames = "mDSNames_" + instance.getPSID();
+		sqlStats = String.format("INSERT INTO `%s` (`timestamp`,`client_id`,`online`) VALUES (?,?,?);", tableStats);
+		sqlNames = String.format("INSERT INTO `%s` (`client_id`,`name`) VALUES (?,?) ON DUPLICATE KEY UPDATE name = VALUES(name);", tableNames);
+		
+		MYSQLConnector connector = null;
+		try {
+			connector = new MYSQLConnector();
+			connector.prepareStm(sqlNames).close();
+			connector.prepareStm(sqlStats).close();
+		} catch (SQLException e) {
+			logger.fatal(e);
+		} finally {
+			if(connector != null)
+				connector.disconnect();
+		}
+		
 		taskBuffer = new TimerTask() {
 			@Override
 			public void run() {
-				insertBuffer();
+				insertBuffer(false);
 			}
 		};
 	}
@@ -78,94 +99,72 @@ public class ModDetailedStats implements Mod {
 	 * Flushes the current buffer into the DB
 	 * Error hardened, will save failed elements for the next run
 	 */
-	private void insertBuffer(){
+	private synchronized void insertBuffer(final boolean closingLogger){
 		long time = System.currentTimeMillis();
 		sBuffer.swap();
 		int size = sBuffer.getLastChannelSize();
 		if(size == 0)
 			return;
 		Vector<DataElem> data = sBuffer.getLastChannel();
-		sBuffer.clearOldChannel();
 		try{
 			conn = new MYSQLConnector();
-			stm = conn.prepareStm(sql);
+			stmStats = conn.prepareStm(sqlStats);
+			stmNames = conn.prepareStm(sqlNames);
 			// use the iterator directly, to remove the element if it's been used
 			// by this we're able to save all left data on a sql failure
 			for(Iterator<DataElem> iterator = data.iterator(); iterator.hasNext(); ){
 				DataElem de = iterator.next();
-				stm.setTimestamp(1, de.getTimestamp());
-				stm.setInt(2, de.getClients());
-				stm.setInt(3, de.getQueryclients());
+				stmStats.setTimestamp(1, de.timestamp);
+				stmStats.setInt(2, de.client);
+				stmStats.setBoolean(3, de.online);
 				try{ // issue #3
-					stm.executeUpdate();
+					stmStats.executeUpdate();
 				}catch(SQLIntegrityConstraintViolationException e){
-					logger.warn("Ignoring dataset: {}\n{}",de.toString(),e);
+					try {
+						logger.warn("Ignoring dataset: {}\n{}",de.toString(),e);
+					} catch (Exception e2) {
+						// do nothing, ignore closed loggers on shutdown
+					}
+				}
+				if(de.name.isPresent()) {
+					stmNames.setInt(1, de.client);
+					stmNames.setString(2, de.name.get());
+					stmNames.executeUpdate();
 				}
 				iterator.remove();
 			}
-			stm.close();
+			stmStats.close();
+			stmNames.close();
 			conn.disconnect();
-			logger.debug("Buffer for {} flushed in {} MS, {} entrys",instance.getSID(),System.currentTimeMillis() - time,size);
+			logger.debug("Buffer for {} flushed in {} MS, {} entrys",instance.getPSID(),System.currentTimeMillis() - time,size);
 		}catch(SQLException | java.util.ConcurrentModificationException e){
 			sBuffer.add(data);
-			logger.error("Error flusing Buffer of SID {} \n{}",instance.getSID(),e);
+			logger.error("Error flusing Buffer of SID {} \n{}",instance.getPSID(),e);
 			logger.info("Delayed insertion of {} elements.",data.size());
 		}
-	}
-
-	/**
-	 * Request update<br>
-	 * Lazy scheduling stops rapid updates on massive joins/leaves
-	 */
-	private void updateClients() {
-		synchronized(lock){ // #3 prevention, still fast enough to withstand ModTest CN/DC spams
-			if ((System.currentTimeMillis() - last_update) >= SPAM_INTERVALL) {
-				last_update = System.currentTimeMillis();
-				addUpdate();
-				if(timer != null)
-					timer.cancel();
-			} else { // too short timespan, we'll create a datapoint later
-				logger.debug("Scheduling later");
-				timer = new Timer(false);
-				timer.schedule(timerdosnapshot, 1000);
-			}
-		}
-	}
-
-	/**
-	 * Internal update scheduler, shouldn't be called directly
-	 * Called if there is a high rate of join/leaves after some time to avoid db spamming
-	 */
-	private void addUpdate() {
-		try {
-			HashMap<String, String> i = getInfo();
-			sBuffer.add(new DataElem(Integer.valueOf(i.get("virtualserver_clientsonline")),
-					Integer.valueOf(i.get("virtualserver_queryclientsonline"))));
-		} catch (TS3ServerQueryException e) {
-			logger.error(e);
-		}
-	}
-
-	/**
-	 * Get basic TS3Server Infos
-	 * 
-	 * @return HashMap with all infos
-	 * @throws TS3ServerQueryException
-	 */
-	private HashMap<String, String> getInfo() throws TS3ServerQueryException {
-		return instance.getTS3Connection().getConnector().getInfo(JTS3ServerQuery.INFOMODE_SERVERINFO, 0);
+		sBuffer.clearOldChannel();
 	}
 
 	@Override
 	public void handleClientJoined(HashMap<String, String> eventInfo) {
-		logger.debug("Client joined {}", tableName);
-		updateClients();
+		int dbID = Integer.valueOf(eventInfo.get(C_DBID));
+		int lID = Integer.valueOf(eventInfo.get(C_LID));
+		String name = eventInfo.get(C_NAME);
+		DataElem elem = new DataElem(dbID, true,name);
+		sBuffer.add(elem);
+		clientMapping.put(lID, dbID);
+		logger.exit();
 	}
 
 	@Override
 	public void handleClientLeft(HashMap<String, String> eventInfo) {
-		logger.debug("Client left {}", tableName);
-		updateClients();
+		int lID = Integer.valueOf(eventInfo.get(C_LID));
+		if(clientMapping.containsKey(lID)) {
+			sBuffer.add(new DataElem(clientMapping.get(lID), false));
+		} else {
+			logger.info("No info about leaving client.");
+		}
+		logger.exit();
 	}
 	
 	@Override
@@ -181,22 +180,34 @@ public class ModDetailedStats implements Mod {
 	@Override
 	public void handleReady() {
 		try {
-			String table = String.format("CREATE TABLE IF NOT EXISTS `%s` (" + "`client_id` int(11) NOT NULL,"
-					+ " `timestamp` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,"
-					+ " `online` bit(1) NOT NULL,"
-					+ " PRIMARY KEY (`client_id`,`timestamp`),"
-					+ " KEY `timestamp` (`timestamp`),"
-					+ " KEY `client_id` (`client_id`)"
-					+ ") ENGINE=InnoDB DEFAULT CHARSET=latin1 ROW_FORMAT=COMPRESSED COMMENT='%s'", tableName, instance.getTS3Connection()
-							.getConnector().getInfo(JTS3ServerQuery.INFOMODE_SERVERINFO, 0).get("virtualserver_name"));
+			String serverName = instance.getTS3Connection()
+			.getConnector().getInfo(JTS3ServerQuery.INFOMODE_SERVERINFO, 0).get("virtualserver_name");
+			String[] tables = {String.format("CREATE TABLE IF NOT EXISTS `%s` ("
+						+ " `timestamp` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,"
+						+ " `client_id` int(11) NOT NULL,"
+						+ " `online` bit(1) NOT NULL,"
+						+ " PRIMARY KEY (`client_id`,`timestamp`),"
+						+ " KEY `timestamp` (`timestamp`),"
+						+ " KEY `client_id` (`client_id`)"
+						+ ") ENGINE=InnoDB DEFAULT CHARSET=latin1 ROW_FORMAT=COMPRESSED COMMENT='%s'", tableStats, serverName)
+					,
+						String.format("CREATE TABLE IF NOT EXISTS `%s` ("
+						+ " `name` VARCHAR(32) NOT NULL,"
+						+ " `client_id` int(11) NOT NULL,"
+						+ " PRIMARY KEY (`client_id`),"
+						+ " KEY `name` (`name`)"
+						+ ") ENGINE=InnoDB DEFAULT CHARSET=latin1 ROW_FORMAT=COMPRESSED COMMENT='%s'", tableNames, serverName)
+			};
 			MYSQLConnector conn = new MYSQLConnector();
-			conn.execUpdateQuery(table);
+			for(String table : tables)  {
+				PreparedStatement stmt = conn.prepareStm(table);
+				stmt.executeQuery();
+				stmt.close();
+			}
 			conn.disconnect();
 		} catch (SQLException | TS3ServerQueryException e) {
 			logger.error("{}", e);
 		}
-		updateClients();
-		insertBuffer();
 		bufferTimer = new Timer(true);
 		bufferTimer.schedule(taskBuffer, SCHEDULE_TIME,SCHEDULE_TIME);
 	}
@@ -214,57 +225,60 @@ public class ModDetailedStats implements Mod {
 	 */
 	@Override
 	public void handleShutdown() {
-		logger.entry();
-		timerdosnapshot.cancel();
-		if (timer != null)
-			last_update = 0;
-			timer.cancel();
+		taskBuffer.cancel();
+		if(bufferTimer != null) 
+			bufferTimer.cancel();
+		insertBuffer(true);
 		try {
-			if (stm != null){
-				if (!stm.isClosed())
-					stm.close();
+			if (stmStats != null){
+				if (!stmStats.isClosed())
+					stmStats.close();
+			}
+			if(stmNames != null) {
+				if(!stmNames.isClosed())
+					stmNames.close();
 			}
 			if(conn != null)
 				conn.disconnect();
 		} catch (SQLException e) {
 		}
-		taskBuffer.cancel();
-		if(bufferTimer != null) 
-			bufferTimer.cancel();
-		insertBuffer();
-		logger.exit();
 	}
 
 	/**
-	 * Dataset for a single point in time
+	 * Data entry for a single point in time
 	 * @author Aron Heinecke
 	 */
 	class DataElem {
-		private Timestamp timestamp;
-		private int clients;
-		private int queryclients;
-
-		public DataElem(int clients, int queryclients) {
-			this.timestamp = new Timestamp(System.currentTimeMillis());
-			this.clients = clients;
-			this.queryclients = queryclients;
-		}
-
-		public Timestamp getTimestamp() {
-			return timestamp;
-		}
-
-		public int getClients() {
-			return clients;
-		}
-
-		public int getQueryclients() {
-			return queryclients;
-		}
+		public final Timestamp timestamp;
+		public final int client;
+		public final boolean online;
+		public final Optional<String> name;
 		
+		/**
+		 * Creates a new DataElement, without a name
+		 * @param client
+		 * @param online
+		 */
+		public DataElem(final int client, final boolean online) {
+			this(client,online,null);
+		}
+
+		/**
+		 * Creates a new DateElement
+		 * @param client client ID
+		 * @param online client is now online/offline
+		 * @param name client name, nullable
+		 */
+		public DataElem(final int client, final boolean online,@Nullable String name) {
+			this.timestamp = new Timestamp(System.currentTimeMillis());
+			this.client = client;
+			this.online = online;
+			this.name = Optional.ofNullable(name);
+		}
+
 		@Override
 		public String toString(){
-			return "date: "+timestamp +" clients: "+ clients+" qe:"+ queryclients;
+			return "date: "+timestamp +" client: "+ client+" online: "+online;
 		}
 	}
 }
