@@ -37,6 +37,10 @@ import Aron.Heinecke.ts3Manager.Instance;
  * @author Aron Heinecke
  */
 public class ConfigLib {
+	private final static String TS_PORT = ".instance_ts3_PORT";
+	private final static String TS_ID = ".instance_ts3_ID";
+	public final static String TS3_PASSWORD = "TS3_PASSWORD";
+	public final static String TS3_USER = "TS3_USER";
 	private Logger logger = LogManager.getLogger();
 	private HashMap<String, Object> config;
 	private String DEFAULT_PATH = "/Aron/Heinecke/ts3Manager/files/config.yml";
@@ -93,9 +97,9 @@ public class ConfigLib {
 		Config.setValue("MYSQL_DB", config.get("MYSQL_DB"));
 		
 		Config.setValue("TS3_IP", config.get("TS3_IP"));
-		Config.setValue("TS3_USER", config.get("TS3_USER"));
+		Config.setValue(TS3_USER, config.get(TS3_USER));
 		Config.setValue("TS3_PORT", config.get("TS3_PORT"));
-		Config.setValue("TS3_PASSWORD", config.get("TS3_PASSWORD"));
+		Config.setValue(TS3_PASSWORD, config.get(TS3_PASSWORD));
 		
 		Config.setValue("CONNECTIONS_RETRY", config.get("CONNECTIONS_RETRY"));
 		
@@ -120,12 +124,24 @@ public class ConfigLib {
 		while(config.containsKey(i+".instance_enabled")){
 			try{
 				if((boolean) config.get(i+".instance_enabled")){
-					int ts3_id = (int) config.get(i+".instance_ts3_ID");
+					int ts3_id;
+					boolean isSID = true;
+					if(config.containsKey(i+TS_ID)) {
+						ts3_id = (int) config.get(i+TS_ID);
+					} else if(config.containsKey(i+TS_PORT)){
+						isSID = false;
+						ts3_id = (int) config.get(i+TS_PORT);
+					}else {
+						throw new Exception("Missing SID or port for instance identification");
+					}
 					String name = (String) config.get(i+".instance_ts3_name");
 					int channel = (int) config.get(i+".instance_ts3_channel");
 					HashMap<String,Boolean> features = (HashMap<String, Boolean>) config.get(i+".instance_features");
 					int admin_group = (int) config.get(i+".instance_admin_group");
-					list.add(new Instance(ts3_id,name,channel,features,admin_group));
+					
+					ServerIdentifier SI = new ServerIdentifier(ts3_id, isSID, Config.getStrValue("TS3_IP"), Config.getIntValue("TS3_PORT"));
+							
+					list.add(new Instance(SI,name,channel,features,admin_group));
 					loaded++;
 				}else{
 					logger.info("Instance no. {} disabled, skipping..",i);

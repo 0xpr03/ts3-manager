@@ -57,8 +57,8 @@ public class ModStats implements Mod {
 
 	public ModStats(Instance instance) {
 		this.instance = instance;
-		logger.debug("Instance: {}", this.instance.getSID());
-		tableName = "ModStats_" + instance.getSID();
+		logger.debug("Instance: {}", this.instance.getPSID());
+		tableName = "ModStats_" + instance.getPSID();
 		sql = String.format("INSERT INTO %s (`timestamp`,`clients`,`queryclients`) VALUES (?,?,?);", tableName);
 		timerdosnapshot = new TimerTask() {
 			@Override
@@ -106,10 +106,10 @@ public class ModStats implements Mod {
 			}
 			stm.close();
 			conn.disconnect();
-			logger.debug("Buffer for {} flushed in {} MS, {} entrys",instance.getSID(),System.currentTimeMillis() - time,size);
+			logger.debug("Buffer for {} flushed in {} MS, {} entrys",instance.getPSID(),System.currentTimeMillis() - time,size);
 		}catch(SQLException | java.util.ConcurrentModificationException e){
 			sBuffer.add(data);
-			logger.error("Error flusing Buffer of SID {} \n{}",instance.getSID(),e);
+			logger.error("Error flusing Buffer of SID {} \n{}",instance.getPSID(),e);
 			logger.info("Delayed insertion of {} elements.",data.size());
 		}
 	}
@@ -168,13 +168,11 @@ public class ModStats implements Mod {
 
 	@Override
 	public void handleClientJoined(HashMap<String, String> eventInfo) {
-		logger.debug("Client joined {}", tableName);
 		updateClients();
 	}
 
 	@Override
 	public void handleClientLeft(HashMap<String, String> eventInfo) {
-		logger.debug("Client left {}", tableName);
 		updateClients();
 	}
 	
@@ -191,11 +189,14 @@ public class ModStats implements Mod {
 	@Override
 	public void handleReady() {
 		try {
-			String table = String.format("CREATE TABLE IF NOT EXISTS `%s` (" + " `clients` int(11) NOT NULL,"
-					+ " `queryclients` int(11) NOT NULL," + " `timestamp` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,"
+			String table = String.format("CREATE TABLE IF NOT EXISTS `%s` ("
+					+ " `clients` int(11) NOT NULL,"
+					+ " `queryclients` int(11) NOT NULL,"
+					+ " `timestamp` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,"
 					+ " PRIMARY KEY (`timestamp`)"
-					+ ") ENGINE=InnoDB DEFAULT CHARSET=latin1 ROW_FORMAT=COMPRESSED COMMENT='%s'", tableName, instance.getTS3Connection()
-							.getConnector().getInfo(JTS3ServerQuery.INFOMODE_SERVERINFO, 0).get("virtualserver_name"));
+					+ ") ENGINE=InnoDB DEFAULT CHARSET=latin1 ROW_FORMAT=COMPRESSED COMMENT='%s'", tableName,
+					instance.getTS3Connection().getConnector().getInfo(JTS3ServerQuery.INFOMODE_SERVERINFO, 0)
+							.get("virtualserver_name"));
 			MYSQLConnector conn = new MYSQLConnector();
 			conn.execUpdateQuery(table);
 			conn.disconnect();

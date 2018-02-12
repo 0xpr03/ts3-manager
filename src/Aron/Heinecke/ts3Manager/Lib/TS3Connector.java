@@ -33,9 +33,7 @@ import de.stefan1200.jts3serverquery.TeamspeakActionListener;
 public class TS3Connector<U extends TeamspeakActionListener> {
 	Logger logger = LogManager.getLogger();
 	JTS3ServerQuery query;
-	private int sID;
-	private String ip;
-	private int port;
+	private ServerIdentifier SI;
 	private String user;
 	private String password;
 	private String name;
@@ -53,22 +51,18 @@ public class TS3Connector<U extends TeamspeakActionListener> {
 	/**
 	 * New TS3Connector
 	 * @param listener
-	 * @param id
-	 * @param ip
-	 * @param port
+	 * @param SI
 	 * @param user
 	 * @param password
 	 * @param name
 	 * @param channel
 	 * @throws TS3ConnectionException if the initial connect fails
 	 */
-	public TS3Connector(U listener, int id, String ip, int port, String user, String password, String name,int channel) throws TS3ConnectionException{
+	public TS3Connector(U listener, ServerIdentifier SI,String user, String password, String name,int channel) throws TS3ConnectionException{
 		query = new JTS3ServerQuery();
-		this.sID = id;
-		this.ip = ip;
+		this.SI = SI;
 		this.password = password;
 		this.name = name;
-		this.port = port;
 		this.user = user;
 		this.channel = channel;
 		this.listener = listener;
@@ -83,9 +77,9 @@ public class TS3Connector<U extends TeamspeakActionListener> {
 					lastErrMsg = System.currentTimeMillis();
 					if(e instanceof TS3ServerQueryException){
 						TS3ServerQueryException e2 = (TS3ServerQueryException) e;
-						logger.fatal("Error during connection establishment! Instance {}",sID);
+						logger.fatal("Error during connection establishment! Instance {}",SI.ID);
 						if (e2.getFailedPermissionID() >= 0)
-							logger.warn("Missing permissions! {} on sID {}",e2.getFailedPermissionID(),sID);
+							logger.warn("Missing permissions! {} on sPID {}",e2.getFailedPermissionID(),SI.ID);
 						logger.warn("Suppressing error log flooting");
 					}else{
 						logger.fatal("Socket exception, server down ?\n{}",e);
@@ -106,9 +100,12 @@ public class TS3Connector<U extends TeamspeakActionListener> {
 	 * @throws Exception 
 	 */
 	private void connect() throws Exception{
-		query.connectTS3Query(ip, port);
+		query.connectTS3Query(SI.IP, SI.queryPort);
 		query.loginTS3(user, password);
-		query.selectVirtualServer(sID);
+		if(SI.isSID)
+			query.selectVirtualServer(SI.ID);
+		else
+			query.selectVirtualServer(SI.ID, true);
 		query.setTeamspeakActionListener(listener);
 		try{
 			if(channel != -1)
@@ -157,7 +154,7 @@ public class TS3Connector<U extends TeamspeakActionListener> {
 			registerEvent(JTS3ServerQuery.EVENT_MODE_TEXTPRIVATE, textPrivate);
 			return true;
 		} catch (TS3ServerQueryException e) {
-			logger.error("Error registering events for SID {}! {}",sID,e);
+			logger.error("Error registering events for PSID {}! {}",SI.ID,e);
 			return false;
 		}
 	}
@@ -172,7 +169,7 @@ public class TS3Connector<U extends TeamspeakActionListener> {
 		          checkConnect();
 		     }
 		};
-		timer.schedule(timertask, 5*60*1000, 5*60*1000);
+		timer.schedule(timertask, 1*60*1000, 1*60*1000);
 	}
 	
 	/**
@@ -223,16 +220,16 @@ public class TS3Connector<U extends TeamspeakActionListener> {
 				if((query.doCommand("serverinfo").get("response").contains("virtualserver_status=online")))
 						return;
 			}
-			logger.warn("Disconnect on SID {}! Reconnecting..",sID);
+			logger.warn("Disconnect on SID {}! Reconnecting..",SI.ID);
 			try {
 				query.closeTS3Connection();
 				connect();
 				registerEvents();
 			} catch (TS3ServerQueryException e) {
 				if(e.getErrorID() == 1033){ // #2
-					logger.warn("Server instance SID {} is down! Can't connect.",sID);
+					logger.warn("Server instance SID {} is down! Can't connect.",SI.ID);
 				}else{
-					logger.error("Reconnect failed for SID {} \n{}", sID,e.getMessage());
+					logger.error("Reconnect failed for SID {} \n{}", SI.ID,e.getMessage());
 				}
 				if(!Config.getBoolValue("CONNECTIONS_RETRY")){
 					if(listener instanceof Instance){
@@ -242,7 +239,7 @@ public class TS3Connector<U extends TeamspeakActionListener> {
 				}
 			}
 		} catch (Exception e) {
-			logger.error("Error during connection check for SID {}, listener:{} \n{}", sID,listener.getClass().getName(),e.getMessage());
+			logger.error("Error during connection check for SID {}, listener:{} \n{}", SI.ID,listener.getClass().getName(),e.getMessage());
 		}
 	}
 	

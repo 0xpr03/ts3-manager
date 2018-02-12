@@ -37,6 +37,11 @@ public final class Config {
 	 * @return value string
 	 */
 	public static String getStrValue(String key){
+		Object value = SETTINGS.get(key);
+		if(value instanceof Integer)
+			return String.valueOf((Integer)value);
+		if(value instanceof Double)
+			return String.valueOf((Double) value);
 		return (String) SETTINGS.get(key);
 	}
 	
