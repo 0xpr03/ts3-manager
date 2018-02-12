@@ -119,17 +119,17 @@ public class ModDetailedStats implements Mod {
 				stmStats.setBoolean(3, de.online);
 				try{ // issue #3
 					stmStats.executeUpdate();
+					if(de.name.isPresent()) {
+						stmNames.setInt(1, de.client);
+						stmNames.setString(2, de.name.get());
+						stmNames.executeUpdate();
+					}
 				}catch(SQLIntegrityConstraintViolationException e){
 					try {
 						logger.warn("Ignoring dataset: {}\n{}",de.toString(),e);
 					} catch (Exception e2) {
 						// do nothing, ignore closed loggers on shutdown
 					}
-				}
-				if(de.name.isPresent()) {
-					stmNames.setInt(1, de.client);
-					stmNames.setString(2, de.name.get());
-					stmNames.executeUpdate();
 				}
 				iterator.remove();
 			}
@@ -139,7 +139,7 @@ public class ModDetailedStats implements Mod {
 			logger.debug("Buffer for {} flushed in {} MS, {} entrys",instance.getPSID(),System.currentTimeMillis() - time,size);
 		}catch(SQLException | java.util.ConcurrentModificationException e){
 			sBuffer.add(data);
-			logger.error("Error flusing Buffer of SID {} \n{}",instance.getPSID(),e);
+			logger.error("Error flushing Buffer of SID {} \n{}",instance.getPSID(),e);
 			logger.info("Delayed insertion of {} elements.",data.size());
 		}
 		sBuffer.clearOldChannel();
@@ -192,7 +192,7 @@ public class ModDetailedStats implements Mod {
 						+ ") ENGINE=InnoDB DEFAULT CHARSET=latin1 ROW_FORMAT=COMPRESSED COMMENT='%s'", tableStats, serverName)
 					,
 						String.format("CREATE TABLE IF NOT EXISTS `%s` ("
-						+ " `name` VARCHAR(32) NOT NULL,"
+						+ " `name` VARCHAR(100) NOT NULL,"
 						+ " `client_id` int(11) NOT NULL,"
 						+ " PRIMARY KEY (`client_id`),"
 						+ " KEY `name` (`name`)"
