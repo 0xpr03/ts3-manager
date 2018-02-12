@@ -79,14 +79,13 @@ public class ModStats implements Mod {
 	 * Flushes the current buffer into the DB
 	 * Error hardened, will save failed elements for the next run
 	 */
-	private void insertBuffer(){
+	private synchronized void insertBuffer(){
 		long time = System.currentTimeMillis();
 		sBuffer.swap();
 		int size = sBuffer.getLastChannelSize();
 		if(size == 0)
 			return;
 		Vector<DataElem> data = sBuffer.getLastChannel();
-		sBuffer.clearOldChannel();
 		try{
 			conn = new MYSQLConnector();
 			stm = conn.prepareStm(sql);
@@ -100,7 +99,11 @@ public class ModStats implements Mod {
 				try{ // issue #3
 					stm.executeUpdate();
 				}catch(SQLIntegrityConstraintViolationException e){
-					logger.warn("Ignoring dataset: {}\n{}",de.toString(),e);
+					try {
+						logger.warn("Ignoring dataset: {}\n{}",de.toString(),e);
+					} catch (Exception e2) {
+						// do nothing, can't fix broken logs on shutdown
+					}
 				}
 				iterator.remove();
 			}
@@ -112,6 +115,7 @@ public class ModStats implements Mod {
 			logger.error("Error flusing Buffer of SID {} \n{}",instance.getPSID(),e);
 			logger.info("Delayed insertion of {} elements.",data.size());
 		}
+		sBuffer.clearOldChannel();
 	}
 
 	/**
@@ -198,7 +202,9 @@ public class ModStats implements Mod {
 					instance.getTS3Connection().getConnector().getInfo(JTS3ServerQuery.INFOMODE_SERVERINFO, 0)
 							.get("virtualserver_name"));
 			MYSQLConnector conn = new MYSQLConnector();
-			conn.execUpdateQuery(table);
+			PreparedStatement stm = conn.prepareStm(table);
+			stm.executeQuery();
+			stm.close();
 			conn.disconnect();
 		} catch (SQLException | TS3ServerQueryException e) {
 			logger.error("{}", e);
@@ -230,6 +236,10 @@ public class ModStats implements Mod {
 			updateClients();
 		}
 		synchronized(lock){ // block inserts
+			taskBuffer.cancel();
+			if(bufferTimer != null) 
+				bufferTimer.cancel();
+			insertBuffer();
 			try {
 				if (stm != null){
 					if (!stm.isClosed())
@@ -239,10 +249,6 @@ public class ModStats implements Mod {
 					conn.disconnect();
 			} catch (SQLException e) {
 			}
-			taskBuffer.cancel();
-			if(bufferTimer != null) 
-				bufferTimer.cancel();
-			insertBuffer();
 			logger.exit();
 		}
 	}
