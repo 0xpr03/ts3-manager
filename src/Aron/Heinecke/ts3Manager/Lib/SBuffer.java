@@ -12,33 +12,47 @@
  *************************************************************************/
 package Aron.Heinecke.ts3Manager.Lib;
 
+import java.util.ArrayList;
 import java.util.Vector;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock.ReadLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock.WriteLock;
 
 /**
- * Swapping Buffer providing non blocking vector usage for reading & deleting old contents
+ * Swapping Buffer providing nearly non blocking vector usage for reading & deleting old contents
  * @author Aron Heinecke
  * @param <U>
  *
  */
 public class SBuffer<U> {
-	private Vector<Vector<U>> buffer;
+	private final ReentrantReadWriteLock lock;
+	private final ArrayList<Vector<U>> buffer;
 	private int channel = 0;
-	private int MAX_CHANNEL;
+	private final int MAX_CHANNEL;
 	
 	/**
 	 * Initalizes a non blocking buffer
 	 * @param size size of pool, size >= 2 recommended
 	 */
 	public SBuffer(int size){
+		lock = new ReentrantReadWriteLock();
 		this.MAX_CHANNEL = size-1;
-		buffer = new Vector<Vector<U>>(size);
+		buffer = new ArrayList<Vector<U>>(size);
 		for(int i = 0; i <= MAX_CHANNEL; i++){
-			buffer.addElement(new Vector<U>());
+			buffer.add(new Vector<U>());
 		}
 	}
 	
+	/**
+	 * Returns the current channel ID
+	 * @return
+	 */
 	public int getCurrentChannelID(){
-		return channel;
+		ReadLock rl = lock.readLock();
+		rl.lock();
+		int tChan = channel;
+		rl.unlock();
+		return tChan;
 	}
 	
 	/**
@@ -54,10 +68,13 @@ public class SBuffer<U> {
 	 * Swap to next channel, has to be called to gain the Data inserted till now
 	 */
 	public void swap(){
+		WriteLock wr = lock.writeLock();
+		wr.lock();
 		if(channel == MAX_CHANNEL)
 			channel = 0;
 		else
 			channel++;
+		wr.unlock();
 	}
 	
 	/**
@@ -65,7 +82,10 @@ public class SBuffer<U> {
 	 * @param data
 	 */
 	public void add(Vector<U> data){
+		ReadLock rl = lock.readLock();
+		rl.lock();
 		buffer.get(channel).addAll(data);
+		rl.unlock();
 	}
 	
 	/**
@@ -73,7 +93,13 @@ public class SBuffer<U> {
 	 * @param in
 	 */
 	public void add(U in){
-		buffer.get(channel).add(in);
+		ReadLock rl = lock.readLock();
+		rl.lock();
+		try {
+			buffer.get(channel).add(in);
+		} finally {
+			rl.unlock();
+		}
 	}
 	
 	/**
@@ -82,14 +108,26 @@ public class SBuffer<U> {
 	 * @return
 	 */
 	public U get(int i){
-		return buffer.get(channel).get(i);
+		ReadLock rl = lock.readLock();
+		rl.lock();
+		try {
+			return buffer.get(channel).get(i);
+		} finally {
+			rl.unlock();
+		}
 	}
 	
 	/**
 	 * Clear old channel
 	 */
-	public synchronized void clearOldChannel(){
-		buffer.get(getLastChanID()).clear();
+	public void clearOldChannel(){
+		ReadLock rl = lock.readLock();
+		rl.lock();
+		try {
+			buffer.get(getLastChanID()).clear();
+		} finally {
+			rl.unlock();
+		}
 	}
 	
 	/**
@@ -97,7 +135,13 @@ public class SBuffer<U> {
 	 * @return
 	 */
 	public Vector<U> getLastChannel(){
-		return new Vector<U>(buffer.get(getLastChanID()));
+		ReadLock rl = lock.readLock();
+		rl.lock();
+		try {
+			return buffer.get(getLastChanID());
+		} finally {
+			rl.unlock();
+		}
 	}
 	
 	/**
@@ -105,7 +149,13 @@ public class SBuffer<U> {
 	 * @return
 	 */
 	public int getLastChannelSize(){
-		return buffer.get(getLastChanID()).size();
+		ReadLock rl = lock.readLock();
+		rl.lock();
+		try {
+			return buffer.get(getLastChanID()).size();
+		} finally {
+			rl.unlock();
+		}
 	}
 	
 	/**
