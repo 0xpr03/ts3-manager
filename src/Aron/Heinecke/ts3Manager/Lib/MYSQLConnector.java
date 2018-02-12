@@ -33,7 +33,7 @@ public class MYSQLConnector {
 	private Logger logger = LogManager.getLogger();
 	private Connection connection;
 	
-	private final int MS_CONNECTION_CHECK_TIMEOUT = 20;
+	private final int MS_CONNECTION_CHECK_TIMEOUT = 100;
 	
 	/**
 	 * Creates a new MYSQL (mariaDB) connector<br>

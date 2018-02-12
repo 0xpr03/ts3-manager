@@ -13,6 +13,7 @@
 package Aron.Heinecke.ts3Manager;
 
 import java.lang.reflect.InvocationTargetException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.StringTokenizer;
 import java.util.Vector;
@@ -20,6 +21,9 @@ import java.util.Vector;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import Aron.Heinecke.ts3Manager.Lib.ConfigLib;
+import Aron.Heinecke.ts3Manager.Lib.ServerIdentifier;
+import Aron.Heinecke.ts3Manager.Lib.TS3ConnectionException;
 import Aron.Heinecke.ts3Manager.Lib.TS3Connector;
 import Aron.Heinecke.ts3Manager.Lib.API.Mod;
 import Aron.Heinecke.ts3Manager.Lib.API.ModRegisters;
@@ -34,29 +38,30 @@ import de.stefan1200.jts3serverquery.TeamspeakActionListener;
  */
 public class Instance implements TeamspeakActionListener {
 	private Logger logger = LogManager.getLogger();
-	private int SID;
+	private ServerIdentifier SI;
 	private boolean retry;
 	private String BOT_NAME;
 	private int CHANNEL;
 	public int ADMIN_GROUP;
 	private HashMap<String, Boolean> enabled_features;
-	private Vector<Mod> mods = new Vector<>();
-	private Vector<Mod> event_joined = new Vector<>();
-	private Vector<Mod> event_left = new Vector<>();
-	private Vector<Mod> event_chat = new Vector<>();
-	private Vector<Mod> event_move = new Vector<>();
+	private ArrayList<Mod> mods = new ArrayList<>();
+	private ArrayList<Mod> event_joined = new ArrayList<>();
+	private ArrayList<Mod> event_left = new ArrayList<>();
+	private ArrayList<Mod> event_chat = new ArrayList<>();
+	private ArrayList<Mod> event_move = new ArrayList<>();
 	private TS3Connector<?> ts3connector;
-	private String lastActionString = "";
 	
 	/**
 	 * An ts3 server instance
-	 * @param SID
+	 * @param PSID port/server id of this instance
+	 * @param isSID use pSID as SID on true or false for port
 	 * @param BOT_NAME
 	 * @param CHANNEL
 	 * @param features
+	 * @param admin_group
 	 */
-	public Instance(final int SID, String BOT_NAME, int CHANNEL, HashMap<String, Boolean> features, int admin_group){
-		this.SID = SID;
+	public Instance(final ServerIdentifier SI, String BOT_NAME, int CHANNEL, HashMap<String, Boolean> features, int admin_group){
+		this.SI = SI;
 		this.BOT_NAME = BOT_NAME;
 		this.CHANNEL = CHANNEL;
 		this.enabled_features = features;
@@ -73,7 +78,7 @@ public class Instance implements TeamspeakActionListener {
 				if(connected)
 					createFeatures();
 				else{
-					logger.error("Failed to connect to SID {}, disabling instance.", SID);
+					logger.error("Failed to connect to SID {}, disabling instance.", SI.ID);
 					TS3Manager.removeInstance(selfRef);
 				}
 			}
@@ -88,9 +93,14 @@ public class Instance implements TeamspeakActionListener {
 	public void shutdown(){
 		logger.entry();
 		for(Mod mod : mods){
-			mod.handleShutdown();
+			try {
+				mod.handleShutdown();
+			} catch (Exception e) {
+				System.err.println(e);
+			}
 		}
-		ts3connector.disconnect();
+		if(ts3connector != null)
+			ts3connector.disconnect();
 		
 	}
 	
@@ -103,9 +113,12 @@ public class Instance implements TeamspeakActionListener {
 	 */
 	public <U extends TeamspeakActionListener> TS3Connector<U> getNewTS3Connector(U i, String bot_name, int channel_id){
 		try {
-			return new TS3Connector<U>(i, SID, Config.getStrValue("TS3_IP"), Config.getIntValue("TS3_PORT"), Config.getStrValue("TS3_USER"), Config.getStrValue("TS3_PASSWORD"),bot_name, channel_id);
-		} catch (Exception e) {
-			logger.warn("{} for SID {}",e, SID);
+			return new TS3Connector<U>(i, SI,
+					Config.getStrValue(ConfigLib.TS3_USER),
+					Config.getStrValue(ConfigLib.TS3_PASSWORD),
+					bot_name, channel_id);
+		} catch (TS3ConnectionException e) {
+			logger.warn("{} for SID {}",e, SI.ID);
 			return null;
 		}
 	}
@@ -160,7 +173,7 @@ public class Instance implements TeamspeakActionListener {
 							serverEvent = true;
 						if(modSettings.isEventChannel())
 							channelEvent = true;
-						logger.info("Instance {} loaded {}",SID,fnName);
+						logger.info("Instance {} loaded {}",SI.ID,fnName);
 					}else{
 						logger.fatal("Class not representing a mod! {}",fnName);
 					}
@@ -179,6 +192,7 @@ public class Instance implements TeamspeakActionListener {
 
 	@Override
 	public void teamspeakActionPerformed(String eventType, HashMap<String, String> eventInfo) {
+		logger.entry();
 		if (eventType.equals("notifytextmessage")) {
 			if ( Integer.parseInt(eventInfo.get("invokerid")) == ts3connector.getConnector().getCurrentQueryClientID() ) {
 				return; // own action
@@ -187,12 +201,7 @@ public class Instance implements TeamspeakActionListener {
 				i.handleTextMessage(eventType, eventInfo);
 			}
 		} else {
-			if ((eventType + eventInfo.toString()).equals(this.lastActionString)) { // double event firing bug
-				return;
-			}
 			switch(eventType){
-			case "notifyserveredited":
-				return;
 			case "notifyclientleftview":
 				for(Mod i : event_left){
 					i.handleClientLeft(eventInfo);
@@ -208,10 +217,18 @@ public class Instance implements TeamspeakActionListener {
 					i.handleClientMoved(eventInfo);
 				}
 				break;
+			case "notifyserveredited":
+			case "notifytokenused":
+			case "notifychannelpasswordchanged":
+			case "notifychannelmoved":
+			case "notifychanneldeleted":
+			case "notifychannelcreated":
+			case "notifychanneldescriptionchanged":
+			case "notifychanneledited":
+				break;
 			default:
 				logger.info("Unknown event {}",eventType);
 			}
-			lastActionString = eventType + eventInfo.toString();
 		}
 		
 		//logger.debug("EVENT TYPE {} Instance: {}\n{}",eventType,SID,eventInfo);
@@ -242,8 +259,12 @@ public class Instance implements TeamspeakActionListener {
 		return false;
 	}
 	
-	public int getSID() {
-		return SID;
+	/**
+	 * Returns the servers identifier port or ID
+	 * @return ID / port
+	 */
+	public int getPSID() {
+		return SI.ID;
 	}
 
 	public String getBOT_NAME() {

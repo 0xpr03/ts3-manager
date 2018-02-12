@@ -300,6 +300,7 @@ public class JTS3ServerQuery
 	private TimerTask eventNotifyTimerTask = null;
 	private String threadName = null;
 	private SimpleDateFormat sdfDebug = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+	private String lastEvent = "";
 	
 	public JTS3ServerQuery()
 	{
@@ -2044,7 +2045,10 @@ public class JTS3ServerQuery
 			if (pos != -1)
 			{
 				final String eventType = actionLine.substring(0, pos);
-
+				if(checkDuplicateEvent(eventType,actionLine))
+				{
+					return false;
+				}
 				Thread t = new Thread(new Runnable()
 				{
 					public void run()
@@ -2065,5 +2069,20 @@ public class JTS3ServerQuery
 		}
 		
 		return true;
+	}
+	
+	private boolean checkDuplicateEvent(final String eventType, final String message) {
+		// according to https://github.com/TheHolyWaffle/TeamSpeak-3-Java-API/blob/afd50d05a8ffafb5a5acc0fa24b927f9a0d7bb8d/src/main/java/com/github/theholywaffle/teamspeak3/SocketReader.java#L168
+		if (!(eventType.equals("notifyclientmoved")
+				|| eventType.equals("notifycliententerview")
+				|| eventType.equals("notifyclientleftview"))) {
+			return false;
+		}
+		if(lastEvent.equals(message)) {
+			lastEvent = "";
+			return true;
+		}
+		lastEvent = message;
+		return false;
 	}
 }
