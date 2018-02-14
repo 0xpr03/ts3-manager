@@ -16,11 +16,11 @@ import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.sql.SQLIntegrityConstraintViolationException;
 import java.sql.Timestamp;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Timer;
 import java.util.TimerTask;
-import java.util.Vector;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -85,7 +85,7 @@ public class ModStats implements Mod {
 		int size = sBuffer.getLastChannelSize();
 		if(size == 0)
 			return;
-		Vector<DataElem> data = sBuffer.getLastChannel();
+		Collection<DataElem> data = sBuffer.getLastChannel();
 		try{
 			conn = new MYSQLConnector();
 			stm = conn.prepareStm(sql);
