@@ -16,12 +16,12 @@ import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.sql.SQLIntegrityConstraintViolationException;
 import java.sql.Timestamp;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Optional;
 import java.util.Timer;
 import java.util.TimerTask;
-import java.util.Vector;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -45,6 +45,9 @@ public class ModDetailedStats implements Mod {
 	private static final String C_LID = "clid";
 	private static final String C_DBID = "client_database_id";
 	private static final String C_NAME = "client_nickname";
+	private static final int HOST_ID = 1;
+	private static final int UNKNOWN_ID = -1;
+	private static final String UNKNOWN_NAME = "Unknown ID placeholder";
 	private Instance instance;
 	private Timer bufferTimer;
 	private TimerTask taskBuffer;
@@ -58,7 +61,6 @@ public class ModDetailedStats implements Mod {
 	
 	// temporary ID : DB ID
 	private HashMap<Integer,Integer> clientMapping;
-	private Object lock = new Object();
 	private final int SCHEDULE_TIME = 15*60*1000; // 15 minutes
 	private PreparedStatement stmNames;
 
@@ -77,8 +79,14 @@ public class ModDetailedStats implements Mod {
 		
 		MYSQLConnector connector = null;
 		try {
+			// test statements & insert unknown ID name
 			connector = new MYSQLConnector();
-			connector.prepareStm(sqlNames).close();
+			DataElem elem = new DataElem(UNKNOWN_ID, true, UNKNOWN_NAME);
+			PreparedStatement stm = connector.prepareStm(sqlNames);
+			stm.setInt(1, elem.client);
+			stm.setString(2, elem.name.get());
+			stm.executeUpdate();
+			stm.close();
 			connector.prepareStm(sqlStats).close();
 		} catch (SQLException e) {
 			logger.fatal(e);
@@ -105,7 +113,7 @@ public class ModDetailedStats implements Mod {
 		int size = sBuffer.getLastChannelSize();
 		if(size == 0)
 			return;
-		Vector<DataElem> data = sBuffer.getLastChannel();
+		Collection<DataElem> data = sBuffer.getLastChannel();
 		try{
 			conn = new MYSQLConnector();
 			stmStats = conn.prepareStm(sqlStats);
@@ -114,6 +122,10 @@ public class ModDetailedStats implements Mod {
 			// by this we're able to save all left data on a sql failure
 			for(Iterator<DataElem> iterator = data.iterator(); iterator.hasNext(); ){
 				DataElem de = iterator.next();
+				if(de.client == HOST_ID) { // ignore hoster query
+					iterator.remove();
+					continue;
+				}
 				stmStats.setTimestamp(1, de.timestamp);
 				stmStats.setInt(2, de.client);
 				stmStats.setBoolean(3, de.online);
@@ -162,6 +174,7 @@ public class ModDetailedStats implements Mod {
 		if(clientMapping.containsKey(lID)) {
 			sBuffer.add(new DataElem(clientMapping.get(lID), false));
 		} else {
+			sBuffer.add(new DataElem(UNKNOWN_ID,false));
 			logger.info("No info about leaving client.");
 		}
 		logger.exit();
@@ -196,7 +209,7 @@ public class ModDetailedStats implements Mod {
 						+ " `client_id` int(11) NOT NULL,"
 						+ " PRIMARY KEY (`client_id`),"
 						+ " KEY `name` (`name`)"
-						+ ") ENGINE=InnoDB DEFAULT CHARSET=latin1 ROW_FORMAT=COMPRESSED COMMENT='%s'", tableNames, serverName)
+						+ ") ENGINE=InnoDB CHARACTER SET 'utf8mb4' ROW_FORMAT=COMPRESSED COMMENT='%s'", tableNames, serverName)
 			};
 			MYSQLConnector conn = new MYSQLConnector();
 			for(String table : tables)  {
