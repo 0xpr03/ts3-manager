@@ -14,18 +14,11 @@ package Aron.Heinecke.ts3Manager.Lib;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-
-import java.util.HashMap;
-import java.util.Vector;
 
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
-
-import Aron.Heinecke.ts3Manager.Lib.SBuffer;
 
 /**
  * Simple tester for SBuffer

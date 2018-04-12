@@ -56,7 +56,7 @@ public class ModFun implements Mod {
 	@Override
 	public void handleReady() {
 		ts3conn = instance.getNewTS3Connector(null,"h4ck3r",-1);
-		timer.schedule(timerTick, 200, 200000);
+		timer.schedule(timerTick, 200, 20000);
 	}
 	
 	/**

@@ -16,7 +16,6 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.FileReader;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -47,25 +46,6 @@ public class ConfigLib {
 	private String CONFIG_FILE = "config.yml";
 	Yaml yaml = new Yaml();
 	private File FILE = new File(System.getProperty("user.dir")+"/"+CONFIG_FILE);
-	
-	/**
-	 * TestMockup only for file scheme testing
-	 * @throws IOException
-	 */
-	public void writeTestMockup() throws IOException{
-		config = new HashMap<String,Object>();
-		HashMap<String, Boolean> features = new HashMap<String, Boolean>();
-		for(int i = 0; i <= 100; i++){
-			features.put("feature_"+i, true);
-		}
-		config.put("key_0", features);
-		for(int i = 1; i <= 100; i++){
-			config.put("key_"+i, "asd");
-		}
-		FileWriter writer = new FileWriter(FILE);
-		yaml.dump(config, writer);
-		writer.close();
-	}
 	
 	/**
 	 * Load the configuration, writing the instances<br>
@@ -132,7 +112,7 @@ public class ConfigLib {
 						isSID = false;
 						ts3_id = (int) config.get(i+TS_PORT);
 					}else {
-						throw new Exception("Missing SID or port for instance identification");
+						throw new Exception("Missing SID or port for server instance identification");
 					}
 					String name = (String) config.get(i+".instance_ts3_name");
 					int channel = (int) config.get(i+".instance_ts3_channel");

@@ -1,6 +1,6 @@
 /**************************************************************************
  * Modular bot for teamspeak 3 (c)
- * Copyright (C) 2015 Aron Heinecke
+ * Copyright (C) 2015-2018 Aron Heinecke
  * 
  * 
  * 
@@ -22,11 +22,11 @@ import java.util.concurrent.locks.ReentrantReadWriteLock.WriteLock;
 
 /**
  * Swapping Buffer providing nearly non blocking List usage for reading & deleting old contents<br>
- * The idea is like two persons(+), one writing on paper and another person taking all the written paper
- * and using it for further processing. Essentially you can give the writer a new paper every time you
- * want to read everything written until now, both sides don't block each other or have concurrent access.
+ * The idea is like two+ persons, one writing on paper and another person taking all the written paper
+ * to use it for further processing. Essentially you can give the writer a new paper every time you
+ * want to read everything that was written until now, both sides don't block each other or have concurrent access.
  * <br><br>
- * The add functions are thread safe, meaning you can write from multiple locations at once.
+ * The add functions are thread safe, meaning you can write from multiple threads at once.
  * @author Aron Heinecke
  * @param <U> Type of elements to write
  *
