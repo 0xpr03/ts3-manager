@@ -18,7 +18,7 @@ This project comes with 2 built in mods:
 reconnecting if necessary
 
 ### Requirements
-- JRE 7 or higher
+- JRE 8 or higher
 - TS3 with query access
 - TS3 whitelist access is required for high traffic bots like the rocket function
 - MariaDB/MySQL at best if you want to use the built in statistics module

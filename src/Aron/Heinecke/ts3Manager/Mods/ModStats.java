@@ -57,8 +57,8 @@ public class ModStats implements Mod {
 
 	public ModStats(Instance instance) {
 		this.instance = instance;
-		logger.debug("Instance: {}", this.instance.getPSID());
-		tableName = "ModStats_" + instance.getPSID();
+		logger.debug("Instance: {}", this.instance.getID());
+		tableName = "ModStats_" + instance.getID();
 		sql = String.format("INSERT INTO %s (`timestamp`,`clients`,`queryclients`) VALUES (?,?,?);", tableName);
 		timerdosnapshot = new TimerTask() {
 			@Override
@@ -109,10 +109,10 @@ public class ModStats implements Mod {
 			}
 			stm.close();
 			conn.disconnect();
-			logger.debug("Buffer for {} flushed in {} MS, {} entrys",instance.getPSID(),System.currentTimeMillis() - time,size);
+			logger.debug("Buffer for {} flushed in {} MS, {} entrys",instance.getID(),System.currentTimeMillis() - time,size);
 		}catch(SQLException | java.util.ConcurrentModificationException e){
 			sBuffer.add(data);
-			logger.error("Error flusing Buffer of SID {} \n{}",instance.getPSID(),e);
+			logger.error("Error flusing Buffer of SID {} \n{}",instance.getID(),e);
 			logger.info("Delayed insertion of {} elements.",data.size());
 		}
 		sBuffer.clearOldChannel();

@@ -1,6 +1,6 @@
 /**************************************************************************
  * Modular bot for teamspeak 3 (c)
- * Copyright (C) 2015-2016 Aron Heinecke
+ * Copyright (C) 2015-2018 Aron Heinecke
  * 
  * 
  * 
@@ -30,11 +30,21 @@ public interface Mod {
 	 */
 	public abstract void handleReady();
 	/**
-	 * Called on shutdown
+	 * Called on shutdown<br>
+	 * Logger is undefined & will probably crash at this point!
 	 */
 	public abstract void handleShutdown();
 	public abstract void handleClientJoined(HashMap<String, String> eventInfo);
 	public abstract void handleClientLeft(HashMap<String, String> eventInfo);
 	public abstract void handleTextMessage(String eventType, HashMap<String, String> eventInfo);
 	public abstract void handleClientMoved(HashMap<String, String> eventInfo);
+	/**
+	 * Fired after connection re-establish<br>
+	 * Not fired on initial connect.
+	 */
+	public default void handleReconnect() {};
+	/**
+	 * Fired on connection loss
+	 */
+	public default void handleConnectionLoss() {};
 }

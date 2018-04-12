@@ -1,6 +1,6 @@
 /**************************************************************************
  * Modular bot for teamspeak 3 (c)
- * Copyright (C) 2015-2016 Aron Heinecke
+ * Copyright (C) 2015-2018 Aron Heinecke
  * 
  * 
  * 
@@ -16,7 +16,6 @@ import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.StringTokenizer;
-import java.util.Vector;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -192,7 +191,6 @@ public class Instance implements TeamspeakActionListener {
 
 	@Override
 	public void teamspeakActionPerformed(String eventType, HashMap<String, String> eventInfo) {
-		logger.entry();
 		if (eventType.equals("notifytextmessage")) {
 			if ( Integer.parseInt(eventInfo.get("invokerid")) == ts3connector.getConnector().getCurrentQueryClientID() ) {
 				return; // own action
@@ -230,7 +228,7 @@ public class Instance implements TeamspeakActionListener {
 				logger.info("Unknown event {}",eventType);
 			}
 		}
-		
+		logger.exit();
 		//logger.debug("EVENT TYPE {} Instance: {}\n{}",eventType,SID,eventInfo);
 	}
 	
@@ -263,7 +261,7 @@ public class Instance implements TeamspeakActionListener {
 	 * Returns the servers identifier port or ID
 	 * @return ID / port
 	 */
-	public int getPSID() {
+	public int getID() {
 		return SI.ID;
 	}
 
@@ -283,5 +281,47 @@ public class Instance implements TeamspeakActionListener {
 	
 	public void setConnectionRetry(boolean retry){
 		this.retry = retry;
+	}
+	
+	/**
+	 * Returns the bot channel
+	 * @return
+	 */
+	public int getChannel() {
+		return CHANNEL;
+	}
+	
+	@Override
+	public void handleConnectionLoss() {
+		Thread t = new Thread(new Runnable() {
+			@Override
+			public void run() {
+				for(Mod i : mods){
+					try {
+						i.handleConnectionLoss();
+					} catch(Exception e) {
+						logger.error("Catched mod exception on connection loss event!\n{}",e);
+					}
+				}
+			}
+		});
+		t.start();
+	}
+
+	@Override
+	public void handleReconnect() {
+		Thread t = new Thread(new Runnable() {
+			@Override
+			public void run() {
+				for(Mod i : mods){
+					try {
+						i.handleReconnect();
+					} catch(Exception e) {
+						logger.error("Catched mod exception on reconnect event!\n{}",e);
+					}
+				}
+			}
+		});
+		t.start();
 	}
 }

@@ -22,4 +22,14 @@ public interface TeamspeakActionListener
 	 * @param eventInfo A HashMap which contains all keys of the event
 	 */
 	public void teamspeakActionPerformed(String eventType, HashMap<String, String> eventInfo);
+	/**
+	 * Handle reconnect event<br>
+	 * ! custom addition, requires TS3Connector, not fired by jts3serverquery
+	 */
+	public void handleReconnect();
+	/**
+	 * Handle connection loss event<br>
+	 * ! custom addition, requires TS3Connector, not fired by jts3serverquery
+	 */
+	public void handleConnectionLoss();
 }
