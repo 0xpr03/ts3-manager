@@ -18,6 +18,7 @@ import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.sql.SQLNonTransientConnectionException;
 import java.sql.Statement;
+import java.util.TimeZone;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -32,6 +33,7 @@ import Aron.Heinecke.ts3Manager.Config;
 public class MYSQLConnector {
 	private Logger logger = LogManager.getLogger();
 	private Connection connection;
+	private PostConnectHook hook = null;
 	
 	private final int MS_CONNECTION_CHECK_TIMEOUT = 100;
 	
@@ -40,6 +42,15 @@ public class MYSQLConnector {
 	 * Connector should be closed at the end via disconnect()
 	 */
 	public MYSQLConnector(){
+		this(null);
+	}
+	/**
+	 * Creates a new MYSQL (mariaDB) connector<br>
+	 * Connector should be closed at the end via disconnect()
+	 * @param hook Post connection hook to execute
+	 */
+	public MYSQLConnector(PostConnectHook hook) {
+		this.hook = hook;
 		connect();
 	}
 	
@@ -52,9 +63,18 @@ public class MYSQLConnector {
 		base = base+Config.getStrValue("MYSQL_IP")+":"+Config.getIntValue("MYSQL_PORT");
 		base += "/"+Config.getStrValue("MYSQL_DB");
 		base +="?tcpKeepAlive=true";
+		base +="&serverTimezone=";
+		base +=TimeZone.getDefault().getID();
 		boolean success = false;
 		try{
 			connection = DriverManager.getConnection(base, Config.getStrValue("MYSQL_USER"), Config.getStrValue("MYSQL_PASSWORD"));
+			if(hook != null) {
+				try {
+					hook.connectHook(connection);
+				} catch (Exception e) {
+					logger.warn("Connection Hook\n{}",e);
+				}
+			}
 			success = true;
 		}catch(SQLNonTransientConnectionException e){
 			logger.error("No connection to DB! {}",e);
@@ -143,6 +163,18 @@ public class MYSQLConnector {
 		}
 		
 		return affectedLines;
+	}
+	
+	/**
+	 * Post connect hook
+	 * @author Aron Heinecke
+	 *
+	 */
+	public interface PostConnectHook{
+		/**
+		 * Called after successfull connection
+		 */
+		public void connectHook(Connection connection);
 	}
 	
 	/**
