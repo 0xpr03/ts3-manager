@@ -368,12 +368,13 @@ public class JTS3ServerQuery
 		{
 			try
 			{
-				if (in.ready())
+				// fix possible discard of event
+				while (in.ready())
 				{
 					String inputLine = in.readLine();
 					if (inputLine.length() > 0)
 					{
-						writeCommLog("< " + inputLine);
+						//writeCommLog("< " + inputLine);
 						handleAction(inputLine);
 					}
 				}

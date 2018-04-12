@@ -1,3 +1,6 @@
+This is a customized version by Aron Heinecke.
+Includes a fix for double events from teamspeak and support for a custom reconnect event.
+
 JTS3ServerQuery library version 2.0.3
 Author: Stefan Martens
 
