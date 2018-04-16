@@ -228,7 +228,6 @@ public class Instance implements TeamspeakActionListener {
 				logger.info("Unknown event {}",eventType);
 			}
 		}
-		logger.exit();
 		//logger.debug("EVENT TYPE {} Instance: {}\n{}",eventType,SID,eventInfo);
 	}
 	

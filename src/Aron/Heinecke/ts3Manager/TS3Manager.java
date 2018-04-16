@@ -1,6 +1,6 @@
 /**************************************************************************
  * Modular bot for teamspeak 3 (c)
- * Copyright (C) 2015-2016 Aron Heinecke
+ * Copyright (C) 2015-2018 Aron Heinecke
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -44,7 +44,7 @@ public class TS3Manager {
 	private static List<Instance> instances = new ArrayList<Instance>();
 	
 	/**
-	 * Mainc lass<br>
+	 * Main class<br>
 	 * Loading config (exit on error)
 	 * Loading instances (ignores errorous instances )
 	 * @param args

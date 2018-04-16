@@ -108,11 +108,11 @@ public class ModDStatsEvent implements Mod {
 					String name = map.get(C_NAME);
 					clientStorage.connect(client_id, conn_id, name);
 				} catch (NullPointerException e) {
-					logger.error("Unable to get details about client after reconnect: {}",map);
+					logger.error("Unable to get details about client on cache refill: {}",map);
 				}
 			}
 		} catch (TS3ServerQueryException e) {
-			logger.error("Unable to read clientlist after reconnect: {}",e);
+			logger.error("Unable to read clientlist on cache refill: {}",e);
 		}
 	}
 	
@@ -193,8 +193,11 @@ public class ModDStatsEvent implements Mod {
 	@Override
 	public void handleClientLeft(HashMap<String, String> eventInfo) {
 		int conn_id = Integer.valueOf(eventInfo.get(C_LID));
-		clientStorage.disconnect(conn_id);
-		logger.exit();
+		if(!clientStorage.disconnect(conn_id)) { // something went wrong, force DC handling, refreshing cache
+			logger.info("Unknown disconnect, forcing cache refresh");
+			handleConnectionLoss();
+			handleReconnect();
+		}
 	}
 	
 	@Override
@@ -351,15 +354,12 @@ public class ModDStatsEvent implements Mod {
 					Client client = liveConnClientID.get(client_id);
 					client.connect(connectionID,name);
 					liveConnID.put(connectionID, client);
-					logger.debug("Known client: {} conn id: {}",client,connectionID);
 				} else {
 					Client client = new Client(client_id, connectionID, name);
 					liveConnID.put(connectionID, client);
 					liveConnClientID.put(client_id, client);
-					logger.debug("Client: {} conn ID: {}",client,connectionID);
 				}
 			}
-			logger.exit();
 		}
 		
 		/**
@@ -393,14 +393,14 @@ public class ModDStatsEvent implements Mod {
 				liveConnClientID.clear();
 				liveConnID.clear();
 			}
-			logger.exit();
 		}
 		
 		/**
 		 * Handle disconnect
 		 * @param connectionID
+		 * @return true if connectionID is known, false on miss
 		 */
-		public void disconnect(int connectionID) {
+		public boolean disconnect(int connectionID) {
 			synchronized (liveConnClientID) {
 				if(liveConnID.containsKey(connectionID)) {
 					Client client = liveConnID.get(connectionID);
@@ -408,14 +408,13 @@ public class ModDStatsEvent implements Mod {
 						liveConnID.remove(connectionID);
 						liveConnClientID.remove(client.client);
 						oldConnections.add(client);
-						logger.debug("Client finished {}",client);
 					}
-					logger.debug("Disconnect connectionID: {}",connectionID);
 				} else {
 					logger.warn("Unknown disconnect id {}",connectionID);
+					return false;
 				}
 			}
-			logger.exit();
+			return true;
 		}
 	}
 
@@ -484,7 +483,6 @@ public class ModDStatsEvent implements Mod {
 				if(connections.remove((Integer) connectionID)) {
 					if(connections.size() == 0) {
 						onlineTime = calcOnlineTimeNow();
-						logger.debug("online time: {}",onlineTime);
 						return true;
 					}
 				} else {
