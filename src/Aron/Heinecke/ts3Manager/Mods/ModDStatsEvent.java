@@ -16,18 +16,14 @@ import java.sql.Date;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.sql.SQLIntegrityConstraintViolationException;
-import java.sql.Time;
 import java.time.Duration;
 import java.time.Instant;
-import java.time.LocalTime;
-import java.util.Calendar;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
-import java.util.TimeZone;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.Vector;
@@ -81,7 +77,7 @@ public class ModDStatsEvent implements Mod {
 		this.instance = instance;
 		tableStats = "mDSStats2_" + instance.getID();
 		tableNames = "mDSNames_" + instance.getID();
-		sqlStats = String.format("INSERT INTO `%s` (`date`,`client_id`,`time`) VALUES (?,?,?) ON DUPLICATE KEY UPDATE `time` = ADDTIME(`time`,VALUES(`time`));", tableStats);
+		sqlStats = String.format("INSERT INTO `%s` (`date`,`client_id`,`time`) VALUES (?,?,?) ON DUPLICATE KEY UPDATE `time` = `time`+VALUES(`time`);", tableStats);
 		sqlNames = String.format("INSERT INTO `%s` (`client_id`,`name`) VALUES (?,?) ON DUPLICATE KEY UPDATE `name` = VALUES(`name`);", tableNames);
 		
 		taskBuffer = new TimerTask() {
@@ -142,7 +138,6 @@ public class ModDStatsEvent implements Mod {
 			stmNames = conn.prepareStm(sqlNames);
 			// use the iterator directly, to remove the element if it's been used
 			// by this we're able to save all left data on a sql failure
-			Calendar cal = Calendar.getInstance(TimeZone.getDefault());
 			for(Iterator<Client> iterator = data.iterator(); iterator.hasNext(); ){
 				Client client = iterator.next();
 				if(client.client == HOST_ID) { // ignore hoster query
@@ -151,7 +146,7 @@ public class ModDStatsEvent implements Mod {
 				}
 				stmStats.setDate(1, date);
 				stmStats.setInt(2, client.getClientID());
-				stmStats.setTime(3, client.getOnlineTime(), cal);
+				stmStats.setInt(3, client.getOnlineTimeCappedInt());
 				try{ // issue #3
 					stmStats.executeUpdate();
 					if(client.name.isPresent()) {
@@ -219,7 +214,7 @@ public class ModDStatsEvent implements Mod {
 			String[] tables = {String.format("CREATE TABLE IF NOT EXISTS `%s` ("
 						+ " `date` date NOT NULL,"
 						+ " `client_id` int(11) NOT NULL,"
-						+ " `time` TIME NOT NULL,"
+						+ " `time` INT NOT NULL,"
 						+ " PRIMARY KEY (`client_id`,`date`),"
 						+ " KEY `date` (`date`),"
 						+ " KEY `client_id` (`client_id`)"
@@ -260,8 +255,7 @@ public class ModDStatsEvent implements Mod {
 			PreparedStatement stm = connector.prepareStm(sqlStats);
 			stm.setDate(1, clientStorage.date);
 			stm.setInt(2, elem.getClientID());
-			Calendar cal = Calendar.getInstance(TimeZone.getDefault());
-			stm.setTime(3, elem.getOnlineTime(),cal);
+			stm.setInt(3, elem.getOnlineTimeCappedInt());
 			stm.executeUpdate();
 			stm.close();
 			PreparedStatement stmName = connector.prepareStm(sqlNames);
@@ -428,7 +422,7 @@ public class ModDStatsEvent implements Mod {
 		public final int client;
 		private Optional<String> name;
 		private Instant joinTime;
-		private Time onlineTime = null;
+		private Long onlineTime = null;
 
 		/**
 		 * Creates a new Client object
@@ -450,7 +444,7 @@ public class ModDStatsEvent implements Mod {
 		 * @param client
 		 * @param duration online time
 		 */
-		private Client(Client parent, Time duration) {
+		private Client(Client parent, long duration) {
 			this.connections = null;
 			this.client = parent.client;
 			this.name = parent.name;
@@ -496,12 +490,10 @@ public class ModDStatsEvent implements Mod {
 		
 		/**
 		 * Calculate online time from start to now
-		 * @return Time of duration, does not change the Client object
+		 * @return Time of duration in seconds, does not change the Client object
 		 */
-		private Time calcOnlineTimeNow() {
-			return Time.valueOf(LocalTime.MIDNIGHT.plus(
-					Duration.between(joinTime, Instant.now()))
-			);
+		private long calcOnlineTimeNow() {
+			return Duration.between(joinTime, Instant.now()).getSeconds();
 		}
 		
 		/**
@@ -533,11 +525,25 @@ public class ModDStatsEvent implements Mod {
 		
 		/**
 		 * Get online time
-		 * @return time/null, check via isDisconnected
+		 * @return time in secs/null, check via isDisconnected
 		 */
 		@Nullable
-		public Time getOnlineTime() {
+		public Long getOnlineTime() {
 			return onlineTime;
+		}
+		
+		/**
+		 * Returns the online time as int, capped to Integer.MAX
+		 * @return time in secs, check via isDisconnected
+		 */
+		@Nullable
+		public int getOnlineTimeCappedInt() {
+			try {
+				return Math.toIntExact(getOnlineTime());
+			} catch (ArithmeticException e) {
+				logger.fatal("Online time reached max!");
+				return Integer.MAX_VALUE;
+			}
 		}
 		
 		/**
