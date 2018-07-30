@@ -14,6 +14,7 @@ package Aron.Heinecke.ts3Manager.Mods;
 
 import java.sql.Date;
 import java.sql.PreparedStatement;
+import java.sql.SQLDataException;
 import java.sql.SQLException;
 import java.sql.SQLIntegrityConstraintViolationException;
 import java.time.Duration;
@@ -129,9 +130,9 @@ public class ModDStatsEvent implements Mod {
 		Collection<Client> data = clientStorage.swap();
 		data.addAll(backlog);
 		backlog.clear();
-		if(data.size() == 0)
-			return;
 		int startSize = data.size();
+		if(startSize == 0)
+			return;
 		try{
 			conn = new MYSQLConnector();
 			stmStats = conn.prepareStm(sqlStats);
@@ -157,6 +158,12 @@ public class ModDStatsEvent implements Mod {
 				}catch(SQLIntegrityConstraintViolationException e){
 					try {
 						logger.warn("Ignoring dataset: {} {}\n{}",date,client.toString(),e);
+					} catch (Exception e2) {
+						// do nothing, ignore closed loggers on shutdown
+					}
+				}catch(SQLDataException d) {
+					try {
+					logger.error("Error on commiting data Name {} client ID {}\n{}",client.getName(),client.getClientID(),d);
 					} catch (Exception e2) {
 						// do nothing, ignore closed loggers on shutdown
 					}

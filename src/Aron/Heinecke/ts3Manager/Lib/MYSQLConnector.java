@@ -63,8 +63,15 @@ public class MYSQLConnector {
 		base = base+Config.getStrValue("MYSQL_IP")+":"+Config.getIntValue("MYSQL_PORT");
 		base += "/"+Config.getStrValue("MYSQL_DB");
 		base +="?tcpKeepAlive=true";
+		// irelevant, just for mysql connector backwards compatibility
+		base +="&useUnicode=true"; 
+		base +="&characterEncoding=utf8mb4";
+		
+		base += "&sessionVariables=character_set_client=utf8mb4,character_set_results=utf8mb4,character_set_connection=utf8mb4";
+
 		base +="&serverTimezone=";
 		base +=TimeZone.getDefault().getID();
+		//logger.debug(base);
 		boolean success = false;
 		try{
 			connection = DriverManager.getConnection(base, Config.getStrValue("MYSQL_USER"), Config.getStrValue("MYSQL_PASSWORD"));
@@ -72,7 +79,7 @@ public class MYSQLConnector {
 				try {
 					hook.connectHook(connection);
 				} catch (Exception e) {
-					logger.warn("Connection Hook\n{}",e);
+					logger.warn("Connection Hook Exception\n{}",e);
 				}
 			}
 			success = true;

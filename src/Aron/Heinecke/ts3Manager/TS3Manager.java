@@ -40,7 +40,7 @@ import Aron.Heinecke.ts3Manager.Lib.ConfigLib;
  */
 public class TS3Manager {
 	private static Logger logger = LogManager.getLogger();
-	private static String VERSION = "0.4.0";
+	private static String VERSION = "0.4.1";
 	private static List<Instance> instances = new ArrayList<Instance>();
 	
 	/**
