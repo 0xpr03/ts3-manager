@@ -169,7 +169,7 @@ public class TS3Connector<U extends TeamspeakActionListener> {
 		          checkConnect();
 		     }
 		};
-		timer.schedule(timertask, 1*60*1000, 1*60*1000);
+		timer.schedule(timertask, 1*30*1000, 1*30*1000);
 	}
 	
 	/**
