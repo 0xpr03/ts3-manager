@@ -40,7 +40,7 @@ import Aron.Heinecke.ts3Manager.Lib.ConfigLib;
  */
 public class TS3Manager {
 	private static Logger logger = LogManager.getLogger();
-	private static String VERSION = "0.4.1";
+	private static String VERSION = "0.5.0";
 	private static List<Instance> instances = new ArrayList<Instance>();
 	
 	/**
@@ -76,6 +76,7 @@ public class TS3Manager {
 				System.exit(1);
 		}
 
+		//noinspection InfiniteLoopStatement
 		while(true){
 			try {
 				Thread.sleep(100);
