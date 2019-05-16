@@ -58,19 +58,17 @@ public class ModTaktlosPing implements Mod {
 
             boolean newGuest = false;
             boolean hasLT = false;
-            List<String> ltsOnline = new ArrayList<>(10);
+            final List<String> ltsOnline = new ArrayList<>(10);
             for (HashMap<String, String> val : res) {
-                String cdid = val.get(CLIENT_DB_ID);
-                String cid = val.get(CID);
-                List<String> groups = Arrays.asList(val.get(CLIENT_SERVER_GROUPS).split(","));
+                final String cdid = val.get(CLIENT_DB_ID);
+                final String cid = val.get(CID);
+                final List<String> groups = Arrays.asList(val.get(CLIENT_SERVER_GROUPS).split(","));
 
                 if (cid.equals(CHANNEL_GUESTS)) {
                     if (groups.contains(GROUP_ID_NOTIFY)) {
                         LAST_PING = System.currentTimeMillis();
-                        hasLT = false;
-                        break;
+                        hasLT = true;
                     } else if (groups.contains(GROUP_ID_GUEST)){
-                        logger.debug("guest group found");
                         if (!knownClients.containsKey(cdid)) {
                             knownClients.put(cdid, System.currentTimeMillis());
                             newGuest = true;
@@ -86,6 +84,9 @@ public class ModTaktlosPing implements Mod {
             if (!hasLT && newGuest && System.currentTimeMillis() - LAST_PING > COOLDOWN_PING_TIME_MS) {
                 LAST_PING = System.currentTimeMillis();
                 notifyGroup(ltsOnline);
+            }
+            if (knownClients.size() > 0) {
+                knownClients.values().removeIf(v -> v > COOLDOWN_CLIENT);
             }
         } catch (Exception e) {
             logger.error("Can't check for guests..", e);
