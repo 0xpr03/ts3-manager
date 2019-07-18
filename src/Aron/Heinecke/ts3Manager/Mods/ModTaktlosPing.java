@@ -49,7 +49,7 @@ public class ModTaktlosPing implements Mod {
             public void run() {
                 runPingCheck();
             }
-        }, 1000, 5000);
+        }, 1000, 50000);
     }
 
     private synchronized void runPingCheck() {
